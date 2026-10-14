@@ -38,50 +38,50 @@ def render_page_2():
         st.markdown("### 🏛️ **Maklumat Sekolah**")
         col_s1, col_s2 = st.columns(2)
         
-        # SUSUNAN SEBELAH KIRI
+        # SUSUNAN SEBELAH KIRI (MEDAN KOSONG LALAI)
         with col_s1:
             nama_sek = st.text_input(
                 "Nama Penuh Sekolah *", 
-                value=info_sec.get('nama_sekolah', 'Sekolah Kebangsaan Bandar Sandakan'),
-                placeholder="Contoh: Sekolah Kebangsaan Bandar Sandakan"
+                value=info_sec.get('nama_sekolah', ''),
+                placeholder="Contoh: SEKOLAH KEBANGSAAN BANDAR SANDAKAN"
             )
             kod_sek = st.text_input(
                 "Kod Sekolah *", 
-                value=info_sec.get('kod_sekolah', 'XBA2004'),
+                value=info_sec.get('kod_sekolah', ''),
                 placeholder="Contoh: XBA2004"
             )
             alamat_1 = st.text_input(
                 "Alamat Baris 1 (Peti Surat / Jalan) *", 
-                value=info_sec.get('alamat_1', 'W.D.T. No. 297'),
+                value=info_sec.get('alamat_1', ''),
                 placeholder="Contoh: W.D.T. No. 297"
             )
             alamat_2 = st.text_input(
                 "Alamat Baris 2 (Poskod & Daerah) *", 
-                value=info_sec.get('alamat_2', '90009, Sandakan'),
+                value=info_sec.get('alamat_2', ''),
                 placeholder="Contoh: 90009, Sandakan"
             )
             negeri_negara = st.text_input(
                 "Negeri & Negara *", 
-                value=info_sec.get('negeri_negara', 'SABAH, MALAYSIA'),
+                value=info_sec.get('negeri_negara', ''),
                 placeholder="Contoh: SABAH, MALAYSIA"
             )
             no_tel = st.text_input(
                 "No. Telefon *", 
-                value=info_sec.get('no_telefon', '089-612673'),
+                value=info_sec.get('no_telefon', ''),
                 placeholder="Contoh: 089-612673"
             )
             no_fax = st.text_input(
                 "No. Faks", 
-                value=info_sec.get('no_faks', '089-612673'),
+                value=info_sec.get('no_faks', ''),
                 placeholder="Contoh: 089-612673"
             )
             emel_rasmi = st.text_input(
                 "Emel *", 
-                value=info_sec.get('emel_rasmi', 'xba2004@moe.edu.my'),
+                value=info_sec.get('emel_rasmi', ''),
                 placeholder="Contoh: xba2004@moe.edu.my"
             )
 
-        # SUSUNAN SEBELAH KANAN (TERMASUK MUAT NAIK & PRATONTON LENCANA)
+        # SUSUNAN SEBELAH KANAN
         with col_s2:
             jenis_sek = st.selectbox(
                 "Peringkat Institusi *", 
@@ -91,7 +91,7 @@ def render_page_2():
             
             sesi_opts = ["2027", "2028", "2029", "2030"]
             curr_sesi = str(info_sec.get('tahun_sesi', '2027'))
-            sesi_index = sesi_opts.index(curr_sesi) if curr_sesi in sesi_opts else 1
+            sesi_index = sesi_opts.index(curr_sesi) if curr_sesi in sesi_opts else 0
 
             tahun_sesi = st.selectbox(
                 "Sesi Persekolahan *", 
@@ -100,7 +100,7 @@ def render_page_2():
             )
             nama_gb = st.text_input(
                 "Nama Pengetua / Guru Besar *", 
-                value=info_sec.get('nama_gb', 'SAZAHLIE BIN SAPAR'),
+                value=info_sec.get('nama_gb', ''),
                 placeholder="Contoh: SAZAHLIE BIN SAPAR"
             )
 
