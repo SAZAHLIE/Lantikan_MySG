@@ -1,44 +1,27 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-PAGE 2 - PENDAFTARAN PROFIL SEKOLAH (DENGAN PRATONTON LENCANA SEKOLAH)
+PAGE 2 - PENDAFTARAN PROFIL SEKOLAH (PURE ZERO-STORAGE & CLEAN FORM)
 ========================================================================
 """
 
 import streamlit as st
-import json
-import os
 import base64
 from footer_component import render_footer
-
-def get_target_storage_dir():
-    path = st.session_state.get('dataset_storage_path', 'DEFAULT_DOWNLOADS')
-    if path == "DEFAULT_DOWNLOADS" or not str(path).strip():
-        return os.getcwd()
-    return path
 
 def render_page_2():
     st.title("🏫 Pendaftaran & Tetapan Profil Sekolah")
     st.caption("Lengkapkan maklumat rasmi sekolah untuk dipaparkan pada Kepala Surat Lantikan (Header KPM), Laporan, dan Penyata Beban Kerja.")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    storage_dir = get_target_storage_dir()
-    config_filepath = os.path.join(storage_dir, "profil_sekolah_terakhir.json")
-
+    # Ambil maklumat dari Session State sahaja (tiada lagi pembacaan fail .json tempatan)
     info_sec = st.session_state.get('school_info', {})
-    if not info_sec and os.path.exists(config_filepath):
-        try:
-            with open(config_filepath, 'r', encoding='utf-8') as f:
-                info_sec = json.load(f)
-                st.session_state['school_info'] = info_sec
-        except Exception:
-            info_sec = {}
 
     with st.form("form_profil_sekolah"):
         st.markdown("### 🏛️ **Maklumat Sekolah**")
         col_s1, col_s2 = st.columns(2)
         
-        # SUSUNAN SEBELAH KIRI (MEDAN KOSONG LALAI)
+        # SUSUNAN SEBELAH KIRI (MEDAN KOSONG)
         with col_s1:
             nama_sek = st.text_input(
                 "Nama Penuh Sekolah *", 
@@ -112,9 +95,8 @@ def render_page_2():
                 help="Imej ini akan dipaparkan di sebelah kanan Header Surat Lantikan KPM."
             )
 
-            # LOGIK PRATONTON IMEJ LENCANA SEKOLAH
+            # PRATONTON LENCANA
             existing_logo_b64 = info_sec.get('logo_base64', '')
-            
             if uploaded_logo is not None:
                 st.caption("🔍 **Pratonton Lencana Baharu Dimuat Naik:**")
                 st.image(uploaded_logo.getvalue(), width=120)
@@ -158,14 +140,7 @@ def render_page_2():
                 }
 
                 st.session_state['school_info'] = updated_info
-
-                try:
-                    with open(config_filepath, 'w', encoding='utf-8') as f:
-                        json.dump(updated_info, f, ensure_ascii=False, indent=4)
-                except Exception:
-                    pass
-
-                st.success("✅ Profil sekolah berjaya disimpan! Beralih ke Sistem Utama...")
+                st.success("✅ Profil sekolah berjaya disimpan!")
                 st.session_state.current_step = 3
                 st.rerun()
 
