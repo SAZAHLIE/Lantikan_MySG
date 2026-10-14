@@ -2,5 +2,6 @@ streamlit
 pandas
 numpy
 cryptography
-xhtml2pdf
 reportlab
+Pillow
+xhtml2pdf
