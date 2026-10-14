@@ -89,7 +89,7 @@ def render_page_2():
                 index=1 if "Menengah" in str(info_sec.get('jenis_sekolah', '')) else 0
             )
             
-            sesi_opts = ["2026/2027", "2027", "2028", "2029", "2030"]
+            sesi_opts = ["2027", "2028", "2029", "2030"]
             curr_sesi = str(info_sec.get('tahun_sesi', '2027'))
             sesi_index = sesi_opts.index(curr_sesi) if curr_sesi in sesi_opts else 1
 
@@ -100,8 +100,8 @@ def render_page_2():
             )
             nama_gb = st.text_input(
                 "Nama Pengetua / Guru Besar *", 
-                value=info_sec.get('nama_gb', 'AHMAD BIN MOHD'),
-                placeholder="Contoh: AHMAD BIN MOHD"
+                value=info_sec.get('nama_gb', 'SAZAHLIE BIN SAPAR'),
+                placeholder="Contoh: SAZAHLIE BIN SAPAR"
             )
 
             st.markdown("<br>", unsafe_allow_html=True)
