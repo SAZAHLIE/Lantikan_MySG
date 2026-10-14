@@ -1,0 +1,6 @@
+streamlit
+pandas
+numpy
+cryptography
+xhtml2pdf
+reportlab
