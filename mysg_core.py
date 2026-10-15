@@ -1,15 +1,18 @@
 """
 ========================================================================
-SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MYSG CORE MODULE - ENJIN PENGIRAAN & KATALOG SAHIH MYSG KPM (SR & SM)
+MYSG KPM: SISTEM PENGURUSAN & ANALISIS BEBAN KERJA
+MODULE: CORE ENGINE & CONSTANTS (PENGELASAN TEPAT HR/HM & BEBAN KERJA)
 ========================================================================
 """
 
 import pandas as pd
 import numpy as np
+import re
 
-SYSTEM_NAME = "Sistem Pengurusan & Pengiraan Beban Kerja Kakitangan Sekolah (MySG KPM)"
-SYSTEM_VERSION = "4.0.0-PROD"
+# NAMA RASMI & VERSI PEMBANGUNAN
+SYSTEM_NAME = "MySG KPM: Sistem Pengurusan & Analisis Beban Kerja"
+SYSTEM_VERSION = "0.1.0-ALPHA"
+SYSTEM_RELEASE_DATE = "15 Oktober 2026"
 
 # GRED RASMI KPM (PPP DAN AKP)
 GRED_RASMI_KPM = [
@@ -21,18 +24,18 @@ GRED_RASMI_KPM = [
 
 # PORTFOLIO BERJAWATAN HAKIKI (H) - SEKOLAH RENDAH (HR01 - HR37)
 MYSG_PORTFOLIO_H_SR = {
-    "HR01": ("Guru Besar (PGB)", 2.5),             # Min 5 waktu x 0.5 jam = 2.5 jam
-    "HR02": ("Guru Penolong Kanan Pentadbiran", 6.0),# Min 12 waktu x 0.5 jam = 6.0 jam
+    "HR01": ("Guru Besar (PGB)", 2.5),
+    "HR02": ("Guru Penolong Kanan Pentadbiran", 6.0),
     "HR03": ("Guru Penolong Kanan Hal Ehwal Murid", 6.0),
     "HR04": ("Guru Penolong Kanan Kokurikulum", 6.0),
     "HR05": ("Guru Penolong Kanan Petang", 6.0),
     "HR06": ("Guru Penolong Kanan Pendidikan Khas", 6.0),
     "HR07": ("Penyelaras Aktiviti Menengah (SR Model Khas K9)", 6.0),
-    "HR08": ("Guru Penyelaras Bestari", 4.0),       # 8-11 waktu x 0.5 jam
-    "HR09": ("Guru Perpustakaan dan Media", 4.0),  # 8-11 waktu x 0.5 jam
-    "HR10": ("Guru Data", 8.0),                     # Max 8 jam PdP + 7 jam pengurusan
-    "HR11": ("Guru Prasekolah", 10.0),              # 1080-1200 minit seminggu
-    "HR12": ("Guru Akademik KSSR", 0.0),           # Dihitung dari lajur Waktu PdP
+    "HR08": ("Guru Penyelaras Bestari", 4.0),
+    "HR09": ("Guru Perpustakaan dan Media", 4.0),
+    "HR10": ("Guru Data", 8.0),
+    "HR11": ("Guru Prasekolah", 10.0),
+    "HR12": ("Guru Akademik KSSR", 0.0),
     "HR13": ("Guru Akademik KSSM (SR K9)", 0.0),
     "HR14": ("Guru Amali (SR K9)", 0.0),
     "HR15": ("Guru Bahasa Cina", 0.0),
@@ -40,11 +43,11 @@ MYSG_PORTFOLIO_H_SR = {
     "HR17": ("Guru Pendidikan Islam", 0.0),
     "HR18": ("Guru Pemulihan / Pemulihan Khas", 0.0),
     "HR19": ("Guru Program Integrasi (PPKI)", 0.0),
-    "HR20": ("Guru Kod Braille", 5.0),              # 8-12 waktu x 0.5 jam
-    "HR21": ("Guru Kod Tangan", 5.0),               # 8-12 waktu x 0.5 jam
-    "HR22": ("Guru Bimbingan (GBK)", 3.0),          # 5 waktu individu + 1 kelompok
+    "HR20": ("Guru Kod Braille", 5.0),
+    "HR21": ("Guru Kod Tangan", 5.0),
+    "HR22": ("Guru Bimbingan (GBK)", 3.0),
     "HR23": ("Guru Kaunseling (SR K9)", 3.0),
-    "HR24": ("Pembantu Tadbir (P/O)", 40.0),       # AKP Waktu Pejabat
+    "HR24": ("Pembantu Tadbir (P/O)", 40.0),
     "HR25": ("Pembantu Tadbir (Kewangan)", 40.0),
     "HR26": ("Juruteknik Komputer", 40.0),
     "HR27": ("Pembantu Pengurusan Murid (Prasekolah)", 40.0),
@@ -62,8 +65,8 @@ MYSG_PORTFOLIO_H_SR = {
 
 # PORTFOLIO BERJAWATAN HAKIKI (H) - SEKOLAH MENENGAH (HM01 - HM75)
 MYSG_PORTFOLIO_H_SM = {
-    "HM01": ("Pengetua (PGB)", 3.33),             # Min 5 waktu x 0.6667 jam = 3.33 jam
-    "HM02": ("Guru Penolong Kanan Pentadbiran", 8.0), # Min 12 waktu x 0.6667 jam = 8.0 jam
+    "HM01": ("Pengetua (PGB)", 3.33),
+    "HM02": ("Guru Penolong Kanan Pentadbiran", 8.0),
     "HM03": ("Guru Penolong Kanan Hal Ehwal Murid", 8.0),
     "HM04": ("Guru Penolong Kanan Kokurikulum", 8.0),
     "HM05": ("Guru Penolong Kanan Petang", 8.0),
@@ -71,27 +74,27 @@ MYSG_PORTFOLIO_H_SM = {
     "HM07": ("Guru Penolong Kanan Sukan (SSM)", 8.0),
     "HM08": ("Guru Penolong Kanan Seni (SSeM)", 8.0),
     "HM09": ("Guru Penolong Kanan Rendah (Model Khas)", 8.0),
-    "HM10": ("Guru Penolong Kanan Tingkatan 6", 5.33),# Min 8 waktu x 0.6667 jam
+    "HM10": ("Guru Penolong Kanan Tingkatan 6", 5.33),
     "HM11": ("Guru Penolong Kanan PraUniversiti", 5.33),
-    "HM12": ("Guru Kanan Mata Pelajaran (GKMP)", 14.67), # 22 waktu x 0.6667 jam
+    "HM12": ("Guru Kanan Mata Pelajaran (GKMP)", 14.67),
     "HM13": ("Ketua Bidang Sukan (SSM)", 14.67),
     "HM14": ("Ketua Bidang Seni (SSeM)", 14.67),
-    "HM15": ("Guru Penyelaras Bestari", 4.0),       # 6-8 waktu x 0.6667 jam
-    "HM16": ("Guru Perpustakaan dan Media", 4.0),  # 6-8 waktu x 0.6667 jam
-    "HM17": ("Guru Data", 8.0),                     # Max 8 jam PdP + 7 jam pengurusan
-    "HM18": ("Guru Tingkatan Enam Akademik", 10.67),# Min 16 waktu x 0.6667 jam
+    "HM15": ("Guru Penyelaras Bestari", 4.0),
+    "HM16": ("Guru Perpustakaan dan Media", 4.0),
+    "HM17": ("Guru Data", 8.0),
+    "HM18": ("Guru Tingkatan Enam Akademik", 10.67),
     "HM19": ("Guru Tingkatan Enam Amali", 10.67),
     "HM20": ("Guru Tingkatan Enam Kokurikulum", 10.67),
     "HM21": ("Guru Pra-U Akademik", 10.67),
     "HM22": ("Guru Pra-U Amali", 10.67),
     "HM23": ("Guru Pra-U Kokurikulum", 10.67),
-    "HM24": ("Guru Akademik KSSM", 0.0),           # Dihitung dari lajur Waktu PdP
+    "HM24": ("Guru Akademik KSSM", 0.0),
     "HM25": ("Guru Akademik KSSR (Model Khas/SSM)", 0.0),
     "HM26": ("Guru Akademik / MP Am (SMT)", 0.0),
     "HM27": ("Guru Akademik KBT (SABKM/TMUA)", 0.0),
     "HM28": ("Guru Akademik KBD (SABKM)", 0.0),
     "HM29": ("Guru Pendidikan Islam SR (Model Khas)", 0.0),
-    "HM30": ("Guru Pendidikan Islam (SBP/SSM/SSeM)", 8.0), # Min 12 waktu x 0.6667 jam
+    "HM30": ("Guru Pendidikan Islam (SBP/SSM/SSeM)", 8.0),
     "HM31": ("Guru Dini (KBD)", 0.0),
     "HM32": ("Guru Tahfiz (KBT/TMUA)", 0.0),
     "HM33": ("Guru al-Quran (KKQ)", 2.0),
@@ -101,8 +104,8 @@ MYSG_PORTFOLIO_H_SM = {
     "HM37": ("Guru Psikologi Sukan (SSM)", 0.0),
     "HM38": ("Guru Unit Sains Sukan (SSM)", 0.0),
     "HM39": ("Guru Program Integrasi (PPKI)", 0.0),
-    "HM40": ("Guru Kod Braille", 5.33),             # 8-12 waktu x 0.6667 jam
-    "HM41": ("Guru Kod Tangan", 5.33),              # 8-12 waktu x 0.6667 jam
+    "HM40": ("Guru Kod Braille", 5.33),
+    "HM41": ("Guru Kod Tangan", 5.33),
     "HM42": ("Guru Amali Bengkel (Ting 1-3)", 0.0),
     "HM43": ("Guru Amali (Ting 4-5 SSM/SSeM)", 0.0),
     "HM44": ("Guru MP Teknikal (SMT)", 0.0),
@@ -113,7 +116,7 @@ MYSG_PORTFOLIO_H_SM = {
     "HM49": ("Jurulatih Sukan Tertutup (SSM)", 0.0),
     "HM50": ("Jurulatih Sukan (SSN)", 0.0),
     "HM51": ("Jurulatih Seni Terbuka (SSeM)", 0.0),
-    "HM52": ("Guru Kaunseling (GBK)", 4.0),         # 5 waktu individu + 1 kelompok
+    "HM52": ("Guru Kaunseling (GBK)", 4.0),
     "HM53": ("Pembantu Tadbir (P/O)", 40.0),
     "HM54": ("Pembantu Tadbir (Kewangan)", 40.0),
     "HM55": ("Juruteknik Komputer", 40.0),
@@ -141,7 +144,6 @@ MYSG_PORTFOLIO_H_SM = {
 
 # PORTFOLIO TANPA JAWATAN (P)
 MYSG_PORTFOLIO_P = {
-    # Sekolah Rendah (PR)
     "PR01": ("Guru Kelas", 2.0),
     "PR02": ("Guru Bertugas Harian", 1.5),
     "PR03": ("Penyelaras PPKI Lantikan Dalaman", 2.0),
@@ -161,7 +163,6 @@ MYSG_PORTFOLIO_P = {
     "PR17": ("Setiausaha Sukan", 2.5),
     "PR18": ("Penyelaras Unit Kokurikulum", 2.0),
     "PR19": ("Guru Penasihat Unit Kokurikulum", 1.5),
-    # Sekolah Menengah (PM)
     "PM01": ("Guru Kelas", 2.0),
     "PM02": ("Guru Bertugas Harian", 1.5),
     "PM03": ("Penyelaras PPKI Lantikan Dalaman", 2.0),
@@ -184,7 +185,6 @@ MYSG_PORTFOLIO_P = {
 
 # JAWATANKUASA (J)
 MYSG_JAWATANKUASA_J = {
-    # Sekolah Rendah (JR)
     "JR01": ("JK Pengurusan Sekolah", 1.0),
     "JR02": ("JK Pengurusan Maklumat Sekolah (JKPMS)", 1.0),
     "JR03": ("JK Pengurusan Sumber Manusia", 1.0),
@@ -208,7 +208,6 @@ MYSG_JAWATANKUASA_J = {
     "JR21": ("JK Pengurusan Kokurikulum", 1.0),
     "JR22": ("JK Pembangunan Sukan Sekolah", 1.0),
     "JR23": ("JK Sukan Tahunan Sekolah", 1.5),
-    # Sekolah Menengah (JM)
     "JM01": ("JK Pengurusan Sekolah", 1.0),
     "JM02": ("JK Pengurusan Maklumat Sekolah (JKPMS)", 1.0),
     "JM03": ("JK Pengurusan Sumber Manusia", 1.0),
@@ -245,31 +244,45 @@ MYSG_JAWATANKUASA_J = {
 }
 
 def determine_kategori_staf(row):
-    """Mengenal pasti sama ada staf ialah Guru atau AKP berdasarkan gred/jawatan/kod."""
-    kumpulan_input = str(row.get('Kumpulan', '')).strip()
-    if kumpulan_input in ['Guru', 'Anggota Kumpulan Pelaksana']:
-        return kumpulan_input
-
-    gred = str(row.get('Gred', '')).upper().strip()
+    """
+    Mengenal pasti kategori staf (Guru vs AKP).
+    Pemeriksaan kod hakiki MySG (HR/HM) diutamakan untuk membetulkan ketidaktetapan input.
+    """
     jawatan = str(row.get('Jawatan', '')).upper().strip()
-    kod_h = str(row.get('Kod_H_1', '')).upper().strip()
     detail_h = str(row.get('Detail_H_1', '')).upper().strip()
+    gred = str(row.get('Gred', '')).upper().strip()
 
+    # 1. SEMAKAN KOD HR / HM (UTAMA - MENGATASI KESILAPAN LABEL CSV)
+    kod_match = re.search(r'(HR|HM)(\d{2})', jawatan) or re.search(r'(HR|HM)(\d{2})', detail_h)
+    if kod_match:
+        prefix, num_str = kod_match.groups()
+        num_code = int(num_str)
+        if prefix == 'HR':
+            return 'Guru' if num_code <= 23 else 'Anggota Kumpulan Pelaksana'
+        elif prefix == 'HM':
+            return 'Guru' if num_code <= 52 else 'Anggota Kumpulan Pelaksana'
+
+    # 2. SEMAKAN KATA KUNCI AKP JELAS
+    if any(k in jawatan for k in ['PEMBANTU', 'JURUTEKNIK', 'OPERASI', 'PENYELIA', 'PEMANDU', 'TADBIR']):
+        return 'Anggota Kumpulan Pelaksana'
+
+    # 3. SEMAKAN GRED PERKHIDMATAN
     if any(gred.startswith(prefix) for prefix in ['DG', 'DC', 'UD']):
         return 'Guru'
+    if any(gred.startswith(prefix) for prefix in ['N', 'FA', 'FT', 'C', 'W', 'H']):
+        return 'Anggota Kumpulan Pelaksana'
 
-    kata_kunci_guru = ['GURU', 'PENGETUA', 'GURU BESAR', 'PENOLONG KANAN', 'PK ', 'GDM', 'GAB', 'GBK', 'GPM', 'GKMP']
-    if any(k in jawatan or k in detail_h for k in kata_kunci_guru):
+    # 4. SEMAKAN KATA KUNCI GURU
+    kata_kunci_guru = ['GURU', 'PENGETUA', 'GURU BESAR', 'PENOLONG KANAN', 'GKMP', 'GBK', 'GAB', 'GPM']
+    if any(k in jawatan for k in kata_kunci_guru):
         return 'Guru'
 
-    if kod_h.startswith('HR') or kod_h.startswith('HM'):
-        try:
-            num_code = int(kod_h.replace('HR', '').replace('HM', '').strip())
-            # HR01-HR23 & HM01-HM52 adalah PPP (Guru)
-            if num_code <= 23 or (kod_h.startswith('HM') and num_code <= 52):
-                return 'Guru'
-        except ValueError:
-            pass
+    # 5. SEMAKAN INPUT CSV
+    kumpulan_input = str(row.get('Kumpulan', '')).strip()
+    if kumpulan_input.upper() in ['GURU', 'PPP']:
+        return 'Guru'
+    if kumpulan_input.upper() in ['AKP', 'ANGGOTA KUMPULAN PELAKSANA']:
+        return 'Anggota Kumpulan Pelaksana'
 
     return 'Anggota Kumpulan Pelaksana'
 
@@ -306,6 +319,10 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
     # 3. Hitung Jam Portfolio Hakiki H
     def get_jam_h(row):
         kod = str(row.get('Kod_H_1', '')).strip()
+        if not kod:
+            m = re.search(r'(HR|HM)(\d{2})', str(row.get('Jawatan', '')))
+            if m:
+                kod = f"{m.group(1)}{m.group(2)}"
         if kod in mapping_h:
             return mapping_h[kod][1]
         return 0.0
@@ -320,8 +337,8 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
             kod = str(row.get(pc, '')).strip()
             if kod in MYSG_PORTFOLIO_P:
                 total_p += MYSG_PORTFOLIO_P[kod][1]
-            elif kod:
-                total_p += 1.5 # Nilai lalai jika kod tersuai
+            elif kod and kod != '-' and kod != 'nan':
+                total_p += 1.5
         return total_p
 
     df_out['JUMLAH_JAM_PORTFOLIO_P'] = df_out.apply(get_jam_p, axis=1) if p_cols else 0.0
@@ -334,8 +351,8 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
             kod = str(row.get(jc, '')).strip()
             if kod in MYSG_JAWATANKUASA_J:
                 total_j += MYSG_JAWATANKUASA_J[kod][1]
-            elif kod:
-                total_j += 1.0 # Nilai lalai jika kod tersuai
+            elif kod and kod != '-' and kod != 'nan':
+                total_j += 1.0
         return total_j
 
     df_out['JUMLAH_JAM_JAWATANKUASA'] = df_out.apply(get_jam_j, axis=1) if j_cols else 0.0

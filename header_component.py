@@ -1,49 +1,59 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-HEADER COMPONENT - KAD HEADER RASMI SEKOLAH DENGAN LENCANA
+MODULE: HEADER & VISI INSPIRASI SISTEM
 ========================================================================
 """
 
 import streamlit as st
 
 def render_school_header():
-    info_sec = st.session_state.get('school_info', {})
-    raw_jenis = str(info_sec.get('jenis_sekolah', 'Sekolah Rendah'))
-    jenis_sekolah = "Sekolah Menengah" if "Menengah" in raw_jenis else "Sekolah Rendah"
-    
-    # LOGIK PAPARAN LENCANA SEKOLAH BESAR & TEKS KEMAS SEBELAH KANAN
-    logo_b64 = info_sec.get('logo_base64', '')
-    if logo_b64:
-        logo_header_html = f'<img src="{logo_b64}" style="height: 78px; width: auto; max-width: 95px; object-fit: contain;" alt="Lencana Sekolah">'
-    else:
-        logo_header_html = '<span style="font-size: 48px; line-height: 1;">🏫</span>'
+    # BANNER HEADER UTAMA
+    st.markdown(
+        """
+        <div style="
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+            padding: 24px;
+            border-radius: 12px;
+            color: #ffffff;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        ">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h2 style="margin:0; font-size: 22px; font-weight: 800; color: #ffffff;">
+                        🏫 MySG KPM : Sistem Pengurusan & Pengiraan Beban Kerja
+                    </h2>
+                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #93c5fd;">
+                        Pemantauan Beban Kerja Saksama • Ketelusan Agihan Tugas • Penjanaan Surat Lantikan Rasmi
+                    </p>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.markdown(f"""
-    <div style="
-        background-color: #f8fafc; 
-        padding: 20px 24px; 
-        border-radius: 14px; 
-        border: 1px solid #e2e8f0; 
-        margin-bottom: 18px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-    ">
-        <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: center;">
-            {logo_header_html}
-        </div>
-        <div style="flex: 1; min-width: 0;">
-            <h2 style="margin: 0 0 6px 0; color: #0f172a; font-size: 22px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2;">
-                {info_sec.get('nama_sekolah', 'NAMA SEKOLAH')} ({info_sec.get('kod_sekolah', 'KOD')})
-            </h2>
-            <p style="margin: 0 0 4px 0; color: #475569; font-size: 13.5px; line-height: 1.4;">
-                📍 <b>Alamat:</b> {info_sec.get('alamat_sekolah', '-')} &nbsp;|&nbsp; 📞 <b>Tel:</b> {info_sec.get('no_telefon', '-')}
-            </p>
-            <p style="margin: 0; color: #64748b; font-size: 12.5px; line-height: 1.4;">
-                <b>Peringkat:</b> {jenis_sekolah} &nbsp;|&nbsp; <b>Sesi:</b> {info_sec.get('tahun_sesi', '-')} &nbsp;|&nbsp; <b>Pentadbir:</b> {info_sec.get('nama_gb', '-')}
+def render_inspiration_card():
+    """
+    KAD INSPIRASI & MATLAMAT UTAMA PEMBINAAN SISTEM
+    """
+    st.markdown(
+        """
+        <div style="
+            background-color: #f0fdf4;
+            border-left: 5px solid #22c55e;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        ">
+            <h4 style="margin: 0 0 6px 0; color: #15803d; font-size: 15px;">
+                🌱 Matlamat & Visi Utama Pembinaan Sistem
+            </h4>
+            <p style="margin: 0; font-size: 13px; color: #166534; line-height: 1.6;">
+                Sistem ini diilhamkan untuk <b>memelihara kesejahteraan warga pendidik</b> menerusi agihan tugas yang adil, telus, dan berasaskan garis panduan rasmi MySG KPM. Apabila beban kerja diurus dengan bijak, guru dapat menumpukan jiwa dan raga kepada kualiti pengajaran demi kemenjadian murid.
             </p>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )

@@ -143,5 +143,3 @@ def render_page_2():
                 st.success("✅ Profil sekolah berjaya disimpan!")
                 st.session_state.current_step = 3
                 st.rerun()
-
-    render_footer()
