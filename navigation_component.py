@@ -111,9 +111,10 @@ def render_navigation_bar(current_step=1, total_steps=3):
                         file_name = f"Vault_MySG_{kod_sek}_backup.mysg"
 
                         # 2. PAPARKAN BUTANG MUAT TURUN UTAMA SECARA DIRECT
-                        st.success(f"✅ Kata laluan sedia! Sila klik butang di bawah:")
+                        st.success(f"✅ Kata laluan sedia! Sila klik butang muat turun di bawah:")
                         
-                        download_clicked = st.download_button(
+                        # Hanya memuat turun fail, TIADA LAGI PEMBERSIHAN MEMORI SERTA-MERTA DI SINI
+                        st.download_button(
                             label=f"📥 Muat Turun Fail Vault ({file_name})",
                             data=encrypted_bytes,
                             file_name=file_name,
@@ -122,8 +123,10 @@ def render_navigation_bar(current_step=1, total_steps=3):
                             use_container_width=True,
                             key=f"btn_direct_download_vault_{current_step}"
                         )
-
-                        if download_clicked:
+                        
+                        # PENGGUNA MESTI MENEKAN BUTANG INI SELEPAS SELESAI MUAT TURUN
+                        st.info("⚠️ Sila pastikan muat turun selesai sepenuhnya terlebih dahulu. Kemudian klik butang di bawah untuk memadam memori sesi secara selamat.")
+                        if st.button("🧹 Selesai Muat Turun & Bersihkan Memori", use_container_width=True, key=f"btn_clear_exit_{current_step}"):
                             st.session_state.clear()
                             st.rerun()
 
