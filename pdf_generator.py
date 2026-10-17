@@ -1,7 +1,7 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MODULE: PDF GENERATOR (STABIL, HIGH-RES JATA, AUTO PAGE NUM, MYSG KPM)
+MODULE: PDF GENERATOR (MEMATUHI SPA BIL 1 TAHUN 2013 KERAJAAN MALAYSIA)
 ========================================================================
 """
 
@@ -59,8 +59,8 @@ def fetch_jata_negara_online():
     except:
         return ""
 
-def get_reportlab_image_from_b64(b64_str, max_width=65, max_height=65):
-    """Menukar rentetan Base64 kepada objek Image dengan Nisbah Aspek (Aspect Ratio) Sempurna."""
+def get_reportlab_image_from_b64(b64_str, max_width=73.7, max_height=56.7):
+    # 26mm = 73.7 pt, 20mm = 56.7 pt mengikut pekeliling
     if not b64_str or len(b64_str) < 30:
         return None
     try:
@@ -74,11 +74,10 @@ def get_reportlab_image_from_b64(b64_str, max_width=65, max_height=65):
         orig_w, orig_h = pil_img.size
         aspect = orig_h / float(orig_w)
         
-        # Pengiraan pro-rata untuk mengelakkan imej termorph/herot
-        if aspect > 1: # Imej lebih tinggi
+        if aspect > 1:
             new_h = max_height
             new_w = new_h / aspect
-        else: # Imej lebih lebar atau empat segi sama
+        else:
             new_w = max_width
             new_h = new_w * aspect
             if new_h > max_height:
@@ -109,10 +108,10 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        leftMargin=36,
-        rightMargin=36,
-        topMargin=25,
-        bottomMargin=25
+        leftMargin=56.7, # 20mm margin kiri mengikut SPA
+        rightMargin=56.7,
+        topMargin=28.3,
+        bottomMargin=28.3
     )
 
     story = []
@@ -122,7 +121,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     bold_body = ParagraphStyle('BoldBody', parent=body_style, fontName='Helvetica-Bold')
     bullet_style = ParagraphStyle('BulletP', parent=body_style, spaceBefore=0, spaceAfter=0, leading=14)
 
-    # 1. OBJEK IMEJ JATA NEGARA & LENCANA (BEBAS MORPHING)
+    # 1. OBJEK IMEJ JATA NEGARA & LENCANA (MAKSIMUM 26mm x 20mm mengikut SPA)
     jata_b64 = ""
     for fname in ["JATA.png", "jata_negara.png", "jata.png", "jata_negara.jpg", "jata.jpg"]:
         path = os.path.join(os.getcwd(), fname)
@@ -133,11 +132,11 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     if not jata_b64:
         jata_b64 = fetch_jata_negara_online()
             
-    jata_img = get_reportlab_image_from_b64(jata_b64, max_width=70, max_height=70) 
+    jata_img = get_reportlab_image_from_b64(jata_b64, max_width=73.7, max_height=56.7) 
     col_jata = jata_img if jata_img else Paragraph("<b>MALAYSIA</b>", body_style)
 
     logo_b64 = school_info.get('logo_base64', '')
-    logo_sek_img = get_reportlab_image_from_b64(logo_b64, max_width=55, max_height=55) 
+    logo_sek_img = get_reportlab_image_from_b64(logo_b64, max_width=73.7, max_height=56.7) 
     col_logo = logo_sek_img if logo_sek_img else Paragraph("", body_style)
 
     # 2. MAKLUMAT SEKOLAH & ALAMAT
@@ -157,14 +156,15 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     
     alamat_str = "<br/>".join(alamat_lines) if alamat_lines else "KM 4, JALAN LEILA,<br/>90000 SANDAKAN,<br/>SABAH, MALAYSIA"
 
+    # Saiz fon ditetapkan maksimum 11 mengikut SPA
     header_text = (
-        f"<b><font size='12'>KEMENTERIAN PENDIDIKAN MALAYSIA</font></b><br/>"
+        f"<b><font size='11'>KEMENTERIAN PENDIDIKAN MALAYSIA</font></b><br/>"
         f"<b><font size='11'>{nama_sekolah}</font></b><br/>"
-        f"<font size='9.5'>{alamat_str}</font>"
+        f"<font size='10'>{alamat_str}</font>"
     )
     header_p = Paragraph(header_text, ParagraphStyle('HeaderCenterText', parent=styles['Normal'], fontName='Helvetica', leading=12.5, alignment=TA_LEFT))
 
-    # 3. MAKLUMAT HUBUNGI (TIADA SPACING SEBELUM BERETIK ':')
+    # 3. MAKLUMAT HUBUNGI (Saiz Maksimum 10 mengikut SPA)
     no_tel = str(school_info.get('no_telefon', '089-612673'))
     no_fax = str(school_info.get('no_faks', '089-612673'))
     emel_rasmi = str(school_info.get('emel_rasmi', 'xba2004@moe.edu.my'))
@@ -175,14 +175,14 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         f"Tel: {no_tel}<br/>"
         f"Faks: {no_fax}<br/>"
         f"Emel: {emel_rasmi}", 
-        ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10, alignment=TA_LEFT)
+        ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=12, alignment=TA_LEFT)
     )
 
-    # 4. JADUAL HEADER (Laras Lebar untuk Tiada Teks Wrap & Sejajar)
-    # Total Lebar = 520 (75 + 255 = 330. Titik mula maklumat hubungi ialah 330)
-    header_table = Table([[col_jata, header_p, contact_p, col_logo]], colWidths=[75, 255, 130, 60])
+    # 4. JADUAL HEADER 
+    # Mengambil kira lebar margin 20mm di kiri dan kanan (Tinggal 482 pt untuk konten)
+    header_table = Table([[col_jata, header_p, contact_p, col_logo]], colWidths=[80, 220, 110, 70])
     header_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('ALIGN', (0,0), (2,0), 'LEFT'),
         ('ALIGN', (3,0), (3,0), 'RIGHT'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
@@ -192,9 +192,10 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     ]))
     
     story.append(header_table)
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.black, spaceBefore=2, spaceAfter=8))
+    # Garisan ketebalan 1pt mengikut SPA
+    story.append(HRFlowable(width="100%", thickness=1.0, color=colors.black, spaceBefore=2, spaceAfter=8))
 
-    # 5. RUJUKAN & TARIKH (SEJAJAR DENGAN MAKLUMAT HUBUNGI DI ATAS)
+    # 5. RUJUKAN & TARIKH
     if not no_rujukan:
         no_rujukan = str(school_info.get('no_rujukan', '')).strip()
         if not no_rujukan:
@@ -210,8 +211,8 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         ['', Paragraph(f"Ruj. Kami: {no_ruj_format}", ruj_style)],
         ['', Paragraph(f"Tarikh: {tarikh_hari_ini}", ruj_style)]
     ]
-    # 330 piksel lajur kosong supaya teks bermula tepat sejajar dengan maklumat hubungi (75+255)
-    rujukan_table = Table(rujukan_table_data, colWidths=[330, 190])
+    # Pelarasan lebar untuk memastikan teks sejajar dengan blok maklumat hubungi (80+220 = 300)
+    rujukan_table = Table(rujukan_table_data, colWidths=[300, 180])
     rujukan_table.setStyle(TableStyle([
         ('ALIGN', (1,0), (1,-1), 'LEFT'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -306,7 +307,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             j_count += 1
     if j_count == 1: task_box_data.append([Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatankuasa Ditetapkan</i>", bullet_style)])
 
-    task_table = Table(task_box_data, colWidths=[520])
+    task_table = Table(task_box_data, colWidths=[465])
     task_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
         ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
