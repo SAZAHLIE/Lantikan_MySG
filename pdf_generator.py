@@ -35,7 +35,6 @@ class NumberedCanvas(canvas.Canvas):
         num_pages = len(self._saved_page_states)
         for state in self._saved_page_states:
             self.__dict__.update(state)
-            # Jika bukan muka surat terakhir, cetak nombor muka surat di penjuru kanan bawah
             if self._pageNumber < num_pages:
                 self.setFont("Helvetica-Bold", 10)
                 self.drawRightString(A4[0] - 36, 25, f"...{self._pageNumber + 1}/")
@@ -52,7 +51,6 @@ def get_local_image_base64(file_path):
     return ""
 
 def fetch_jata_negara_online():
-    """Fungsi Muat Turun Jata Negara jika fail lokal tiada."""
     url = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/200px-Coat_of_arms_of_Malaysia.svg.png"
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -80,7 +78,6 @@ def get_reportlab_image_from_b64(b64_str, width=65, height=65):
         return None
 
 def format_tarikh_melayu(d):
-    # BULAN DALAM HURUF BESAR
     bulan = ["", "JANUARI", "FEBRUARI", "MAC", "APRIL", "MEI", "JUN", "JULAI", "OGOS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DISEMBER"]
     return f"{d.day} {bulan[d.month]} {d.year}"
 
@@ -106,14 +103,14 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story = []
     styles = getSampleStyleSheet()
 
-    # ISI SURAT DITETAPKAN KEPADA SAIZ 11
     body_style = ParagraphStyle('BodyDark', parent=styles['Normal'], fontName='Helvetica', fontSize=11, leading=14, alignment=TA_JUSTIFY)
     bold_body = ParagraphStyle('BoldBody', parent=body_style, fontName='Helvetica-Bold')
     bullet_style = ParagraphStyle('BulletP', parent=body_style, spaceBefore=0, spaceAfter=0, leading=14)
 
     # 1. OBJEK IMEJ JATA NEGARA & LENCANA
     jata_b64 = ""
-    for fname in ["jata_negara.png", "jata.png", "jata_negara.jpg", "jata.jpg"]:
+    # Mencari JATA.png secara spesifik terlebih dahulu
+    for fname in ["JATA.png", "jata_negara.png", "jata.png", "jata_negara.jpg", "jata.jpg"]:
         path = os.path.join(os.getcwd(), fname)
         if os.path.exists(path):
             jata_b64 = get_local_image_base64(path)
@@ -153,7 +150,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     )
     header_p = Paragraph(header_text, ParagraphStyle('HeaderCenterText', parent=styles['Normal'], fontName='Helvetica', leading=12.5, alignment=TA_LEFT))
 
-    # 3. MAKLUMAT HUBUNGI (SAIZ 9)
+    # 3. MAKLUMAT HUBUNGI (SAIZ 8)
     no_tel = str(school_info.get('no_telefon', '089-612673'))
     no_fax = str(school_info.get('no_faks', '089-612673'))
     emel_rasmi = str(school_info.get('emel_rasmi', 'xba2004@moe.edu.my'))
@@ -164,11 +161,12 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         f"Tel&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {no_tel}<br/>"
         f"Faks&nbsp;&nbsp;&nbsp;&nbsp;: {no_fax}<br/>"
         f"Emel&nbsp;&nbsp;&nbsp;: {emel_rasmi}", 
-        ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=11, alignment=TA_LEFT)
+        ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10, alignment=TA_LEFT)
     )
 
-    # 4. JADUAL HEADER
-    header_table = Table([[col_jata, header_p, contact_p, col_logo]], colWidths=[80, 240, 140, 60])
+    # 4. JADUAL HEADER (Laras Lebar untuk Sejajar)
+    # Total Lebar = 520 (80 + 230 = 310. Maklumat Hubungi bermula pada piksel 310)
+    header_table = Table([[col_jata, header_p, contact_p, col_logo]], colWidths=[80, 230, 150, 60])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
         ('ALIGN', (0,0), (2,0), 'LEFT'),
@@ -182,7 +180,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(header_table)
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.black, spaceBefore=2, spaceAfter=8))
 
-    # 5. RUJUKAN & TARIKH (TIADA SPACING)
+    # 5. RUJUKAN & TARIKH (TIDAK BOLD, ALIGN LEFT, SAMA BARIS DENGAN MAKLUMAT HUBUNGI)
     if not no_rujukan:
         no_rujukan = str(school_info.get('no_rujukan', '')).strip()
         if not no_rujukan:
@@ -192,11 +190,24 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     no_ruj_format = f"{no_rujukan} (&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)"
     tarikh_hari_ini = format_tarikh_melayu(datetime.date.today())
 
-    ruj_tarikh_p = Paragraph(
-        f"<b>Ruj. Kami:</b> {no_ruj_format}<br/><b>Tarikh:</b> {tarikh_hari_ini}",
-        ParagraphStyle('RujTarikh', parent=styles['Normal'], fontName='Helvetica', fontSize=11, leading=14, alignment=TA_RIGHT)
-    )
-    story.append(ruj_tarikh_p)
+    ruj_style = ParagraphStyle('Ruj', parent=styles['Normal'], fontName='Helvetica', fontSize=11, leading=14, alignment=TA_LEFT)
+    
+    rujukan_table_data = [
+        ['', Paragraph(f"Ruj. Kami: {no_ruj_format}", ruj_style)],
+        ['', Paragraph(f"Tarikh: {tarikh_hari_ini}", ruj_style)]
+    ]
+    # Lebar diselaraskan: 310 piksel kosong di kiri, 210 piksel untuk teks rujukan.
+    # Ini memastikan teks Rujukan sejajar sempurna (garis lurus) dengan teks Tel/Faks di atas.
+    rujukan_table = Table(rujukan_table_data, colWidths=[310, 210])
+    rujukan_table.setStyle(TableStyle([
+        ('ALIGN', (1,0), (1,-1), 'LEFT'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+    
+    story.append(rujukan_table)
     story.append(Spacer(1, 16))
 
     # 6. PENERIMA SURAT
