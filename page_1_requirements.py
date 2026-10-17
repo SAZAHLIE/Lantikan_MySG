@@ -373,6 +373,16 @@ def render_page_1():
 
             tahun_sesi = st.selectbox("Sesi Persekolahan *", options=sesi_opts, index=sesi_index, key="select_tahun_sesi")
             nama_gb = st.text_input("Nama Pengetua / Guru Besar *", value=info_sec.get('nama_gb', ''), placeholder="Contoh: SAZAHLIE BIN SAPAR", key="input_nama_gb")
+            
+            # ---------------------------------------------------------------
+            # TAMBAHAN RUANGAN TETAPAN PIN PADA BORANG LOG MASUK PERTAMA
+            # ---------------------------------------------------------------
+            admin_pin = st.text_input(
+                "Tetapan PIN Keselamatan Pentadbir *", 
+                value=info_sec.get('admin_pin', '1234'),
+                type="password",
+                help="PIN ini diperlukan untuk mendaftar, membuang, atau merombak tugas kakitangan."
+            )
 
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("🖼️ **Muat Naik Lencana Sekolah (Optional)**")
@@ -395,8 +405,8 @@ def render_page_1():
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("💾 Sahkan Profil & Proses Data Staf", type="primary", use_container_width=True, key="btn_confirm_process_new"):
-            if not nama_sek.strip() or not kod_sek.strip() or not nama_gb.strip():
-                st.error("❌ Sila lengkapkan maklumat bertanda (*) iaitu Nama Sekolah, Kod Sekolah, dan Nama Pengetua/Guru Besar.")
+            if not nama_sek.strip() or not kod_sek.strip() or not nama_gb.strip() or not admin_pin.strip():
+                st.error("❌ Sila lengkapkan maklumat bertanda (*) iaitu Nama Sekolah, Kod Sekolah, Nama Pengetua, dan PIN Pentadbir.")
             elif uploaded_csv is None:
                 st.error("⚠️ Sila muat naik fail CSV Staf untuk meneruskan pengiraan beban kerja.")
             else:
@@ -424,6 +434,7 @@ def render_page_1():
                         'no_faks': no_fax.strip(),
                         'emel_rasmi': emel_rasmi.strip(),
                         'nama_gb': nama_gb.upper().strip(),
+                        'admin_pin': admin_pin.strip(), # Sila pastikan param ini wujud di sini
                         'tahun_sesi': tahun_sesi,
                         'logo_base64': logo_b64
                     }
