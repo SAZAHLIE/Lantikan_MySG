@@ -148,7 +148,7 @@ def render_tab_4(school_info):
             btn_add = st.form_submit_button("➕ Simpan & Daftarkan Kakitangan Baharu", type="primary", use_container_width=True)
 
             if btn_add:
-                if pin_pengesahan_1 != "1234":
+                if pin_pengesahan_1 != school_info.get('admin_pin', '1234'):
                     st.error("🔒 PIN Pengesahan salah! Akses ditolak. Hanya pentadbir yang sah dibenarkan mengubah data.")
                 elif not nama_baharu.strip():
                     st.toast("⚠️ Sila masukkan Nama Penuh Kakitangan!", icon="⚠️")
@@ -283,7 +283,7 @@ def render_tab_4(school_info):
                 pin_pengesahan_2 = st.text_input("🔑 PIN Pentadbir:", type="password", key="pin_buang_staf")
                 
                 if st.button("🔴 Pengesahan Keluarkan Kakitangan", type="primary", use_container_width=True, key="btn_confirm_remove_staf"):
-                    if pin_pengesahan_2 != "1234":
+                    if pin_pengesahan_2 != school_info.get('admin_pin', '1234'):
                         st.error("🔒 PIN Pengesahan salah! Akses ditolak.")
                     else:
                         df_filtered_raw = df_staff[df_staff['Nama'] != staf_to_remove].reset_index(drop=True)
