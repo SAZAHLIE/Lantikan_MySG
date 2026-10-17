@@ -1,7 +1,7 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MODULE: PDF GENERATOR (LOCKED HEADER + KEMASKINI BADAN SURAT)
+MODULE: PDF GENERATOR (LOCKED HEADER + ALIGNMENT & FOOTER KEMASKINI)
 ========================================================================
 """
 
@@ -21,7 +21,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from reportlab.pdfgen import canvas
 
-# KELAS KANVAS KHAS UNTUK MENCETAK NOMBOR MUKA SURAT & FOOTER MYSG
+# KELAS KANVAS KHAS UNTUK MENCETAK NOMBOR MUKA SURAT & FOOTER SPA
 class NumberedCanvas(canvas.Canvas):
     def __init__(self, *args, **kwargs):
         canvas.Canvas.__init__(self, *args, **kwargs)
@@ -36,12 +36,22 @@ class NumberedCanvas(canvas.Canvas):
         for state in self._saved_page_states:
             self.__dict__.update(state)
             
-            # FOOTER KIRI BAWAH (SAIZ FON 6)
+            # GARISAN PEMISAH BAWAH (Mengikut SPA: 30mm dari bawah, 20mm dari kiri, panjang 175mm)
+            # 30mm = 85pt, 20mm = 56.7pt, 175mm = 496.1pt
+            self.setLineWidth(1.0)
+            self.line(56.7, 85.0, 56.7 + 496.1, 85.0)
+
+            # COGAN KATA SEKOLAH (Di bawah garisan hitam)
+            cogan_kata = getattr(self, 'cogan_kata', 'BERBUDAYA BERILMU BERWAWASAN')
+            self.setFont("Helvetica-Bold", 8)
+            self.drawCentredString(A4[0] / 2.0, 72.0, cogan_kata.upper())
+
+            # NOTA JANAAN SISTEM (Kiri Bawah)
             self.setFont("Helvetica", 6)
             kod = getattr(self, 'kod_sekolah', '')
-            self.drawString(56.7, 15, f"Janaan MySG KPM: Sistem Pengurusan & Analisis Beban Kerja ({kod})")
+            self.drawString(56.7, 20, f"Janaan MySG KPM: Sistem Pengurusan & Analisis Beban Kerja ({kod})")
 
-            # NOMBOR MUKA SURAT KANAN BAWAH
+            # NOMBOR MUKA SURAT (Kanan Bawah)
             if self._pageNumber < num_pages:
                 self.setFont("Helvetica-Bold", 10)
                 self.drawRightString(A4[0] - 56.7, 25, f"...{self._pageNumber + 1}/")
@@ -111,15 +121,15 @@ def mask_ic_number(ic_str):
 def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
 
-    # Pengekstrakan Maklumat Sekolah 
     kod_sek = str(school_info.get('kod_sekolah', 'SEK'))
     jenis_sek = str(school_info.get('jenis_sekolah', 'Sekolah Rendah'))
     gelaran_gb = "Pengetua" if "Menengah" in jenis_sek else "Guru Besar"
+    cogan_kata = str(school_info.get('cogan_kata', 'BERBUDAYA BERILMU BERWAWASAN')).strip()
 
-    # Fungsi penyesuai kanvas untuk melekatkan kod sekolah pada Footer
     def make_canvas(*args, **kwargs):
         canvas_obj = NumberedCanvas(*args, **kwargs)
         canvas_obj.kod_sekolah = kod_sek
+        canvas_obj.cogan_kata = cogan_kata
         return canvas_obj
 
     buffer = io.BytesIO()
@@ -129,7 +139,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         leftMargin=56.7, 
         rightMargin=56.7,
         topMargin=28.3,
-        bottomMargin=28.3
+        bottomMargin=105.0  # Ditingkatkan untuk memberi ruang kepada Kaki Surat SPA
     )
 
     story = []
@@ -138,9 +148,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     body_style = ParagraphStyle('BodyDark', parent=styles['Normal'], fontName='Helvetica', fontSize=11, leading=14, alignment=TA_JUSTIFY)
     bold_body = ParagraphStyle('BoldBody', parent=body_style, fontName='Helvetica-Bold')
     
-    # -------------------------------------------------------------
     # 1. KEPALA SURAT (KOMPONEN DIKUNCI / LOCKED)
-    # -------------------------------------------------------------
     jata_b64 = ""
     for fname in ["JATA.png", "jata_negara.png", "jata.png", "jata_negara.jpg", "jata.jpg"]:
         path = os.path.join(os.getcwd(), fname)
@@ -236,9 +244,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(rujukan_table)
     story.append(Spacer(1, 16))
 
-    # -------------------------------------------------------------
     # 2. PENERIMA & TAJUK SURAT
-    # -------------------------------------------------------------
     nama_staf = str(staf_row.get('Nama', '')).upper()
     no_kp = mask_ic_number(str(staf_row.get('No_KP', '')).strip())
 
@@ -253,30 +259,24 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph(tajuk_surat, ParagraphStyle('TajukP', parent=bold_body, fontSize=11, leading=14)))
     story.append(Spacer(1, 10))
 
-    # -------------------------------------------------------------
-    # 3. KANDUNGAN BADAN SURAT (KEMASKINI DOKUMEN)
-    # -------------------------------------------------------------
+    # 3. KANDUNGAN BADAN SURAT
     p1 = "Dengan segala hormatnya perkara di atas adalah dirujuk bersama perkara-perkara berkaitan di bawah Akta Pendidikan 1996, Surat-surat Pekeliling Ikhtisas (SPI), serta arahan-arahan dan garis panduan yang berkuat kuasa."
     p2 = "2. Sukacita dimaklumkan bahawa pihak sekolah melantik tuan/puan untuk memegang jawatan dan melaksanakan amanah seperti butiran di bawah berkuat kuasa dari tarikh surat ini dikeluarkan sehingga ke suatu tarikh yang dimaklumkan kemudian."
     
     story.append(Paragraph(p1, body_style))
     story.append(Spacer(1, 6))
     story.append(Paragraph(p2, body_style))
-    story.append(Spacer(1, 6))
-
-    # -------------------------------------------------------------
-    # 4. KOTAK AGIHAN TUGAS (TIADA BOX, TIADA BOLD, TIADA SPACING)
-    # -------------------------------------------------------------
+    
+    # 4. KOTAK AGIHAN TUGAS (DIJAJARKAN KIRI PENUH TANPA JADUAL)
     jawatan_val = str(staf_row.get('Jawatan', '')).strip()
     dtl_h = str(staf_row.get('Detail_H_1', '')).strip()
     kod_h = str(staf_row.get('Kod_H_1', '')).strip()
     jawatan_val = jawatan_val if jawatan_val not in ["nan", "None", ""] else (dtl_h if dtl_h not in ["nan", "None", ""] else "Guru Akademik Biasa")
     jawatan_full = f"{kod_h} | {jawatan_val}" if kod_h and kod_h not in jawatan_val else jawatan_val
 
-    task_box_data = []
-    
     # 2.1 JAWATAN BERPORTFOLIO
-    task_box_data.append([Paragraph(f"2.1. JAWATAN BERPORTFOLIO: {jawatan_full}", body_style)])
+    story.append(Spacer(1, 14))
+    story.append(Paragraph(f"2.1. JAWATAN BERPORTFOLIO: {jawatan_full}", body_style))
 
     pdp_cols = [c for c in staf_row.index if c.startswith('Subjek_')]
     sub_count = 1
@@ -290,11 +290,13 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             try: wkt_num = int(wkt_val)
             except: wkt_num = 0
             cls_str = f", {cls_val}" if cls_val not in ["nan", "None", ""] else ""
-            task_box_data.append([Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.1.{sub_count}. Mengajar {sub_val}{cls_str} ({wkt_num} Waktu)", body_style)])
+            story.append(Paragraph(f"2.1.{sub_count}. Mengajar {sub_val}{cls_str} ({wkt_num} Waktu)", body_style))
             sub_count += 1
 
     # 2.2 PORTFOLIO TANPA JAWATAN
-    task_box_data.append([Paragraph("2.2. PORTFOLIO TANPA JAWATAN:", body_style)])
+    story.append(Spacer(1, 14))
+    story.append(Paragraph("2.2. PORTFOLIO TANPA JAWATAN:", body_style))
+    
     p_cols = [c for c in staf_row.index if c.startswith('Kod_P_')]
     p_count = 1
     for col in p_cols:
@@ -306,14 +308,16 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             from mysg_core import MYSG_PORTFOLIO_P
             label_p = f"{p_kod} | {MYSG_PORTFOLIO_P[p_kod][0]}" if p_kod in MYSG_PORTFOLIO_P else p_kod
             dtl_str = f": {p_dtl}" if p_dtl and p_dtl not in ["nan", "None", label_p] else ""
-            task_box_data.append([Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.2.{p_count}. {label_p}{dtl_str}", body_style)])
+            story.append(Paragraph(f"2.2.{p_count}. {label_p}{dtl_str}", body_style))
             p_count += 1
             
     if p_count == 1: 
-        task_box_data.append([Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatan Tanpa Portfolio Ditetapkan</i>", body_style)])
+        story.append(Paragraph("<i>Tiada Jawatan Tanpa Portfolio Ditetapkan</i>", body_style))
 
     # 2.3 JAWATANKUASA
-    task_box_data.append([Paragraph("2.3. JAWATANKUASA:", body_style)])
+    story.append(Spacer(1, 14))
+    story.append(Paragraph("2.3. JAWATANKUASA:", body_style))
+    
     j_cols = [c for c in staf_row.index if c.startswith('Kod_J_')]
     j_count = 1
     for col in j_cols:
@@ -325,26 +329,15 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             from mysg_core import MYSG_JAWATANKUASA_J
             label_j = f"{j_kod} | {MYSG_JAWATANKUASA_J[j_kod][0]}" if j_kod in MYSG_JAWATANKUASA_J else j_kod
             dtl_str = f": {j_dtl}" if j_dtl and j_dtl not in ["nan", "None", label_j] else ""
-            task_box_data.append([Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.3.{j_count}. {label_j}{dtl_str}", body_style)])
+            story.append(Paragraph(f"2.3.{j_count}. {label_j}{dtl_str}", body_style))
             j_count += 1
             
     if j_count == 1: 
-        task_box_data.append([Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatankuasa Ditetapkan</i>", body_style)])
+        story.append(Paragraph("<i>Tiada Jawatankuasa Ditetapkan</i>", body_style))
 
-    task_table = Table(task_box_data, colWidths=[481])
-    task_table.setStyle(TableStyle([
-        ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 0),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-    ]))
-    
-    story.append(task_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 14))
 
-    # -------------------------------------------------------------
-    # 5. PENUTUP & TANDATANGAN (KEMASKINI DOKUMEN)
-    # -------------------------------------------------------------
+    # 5. PENUTUP & TANDATANGAN
     p3 = "3. Sehubungan dengan itu, tuan/puan adalah dinasihatkan untuk merujuk dan memahami tugas serta tanggungjawab yang ditetapkan seperti yang dinyatakan dalam MySG KPM, Pekeliling dan SPI serta dokumen yang berkaitan."
     p4 = "4. Sebarang kecuaian dan ketidakakuran tuan/puan dalam menjalankan tugas-tugas tersebut, tuan/puan boleh dikenakan Tindakan di bawah Peraturan-peraturan Pegawai Awam (Kelakuan dan Tatatertib) 1993."
     p5 = "5. Semoga tuan/puan dapat menjalankan tugas yang diamanahkan dengan komitmen dan akauntabiliti yang tinggi."
@@ -366,12 +359,10 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph("Saya yang menjalankan amanah,", body_style))
     story.append(Spacer(1, 35))
     
-    # Nama GB (Tanpa Kurungan), Gelaran (Dinamik), Sekolah (Title Case)
     story.append(Paragraph(f"<b>{nama_gb}</b>", bold_body))
     story.append(Paragraph(f"{gelaran_gb}", body_style))
     story.append(Paragraph(f"{nama_sekolah.title()}", body_style))
 
-    # JANA PDF MENGGUNAKAN KANVAS KHAS UNTUK AUTO PAGE NUM & FOOTER
     doc.build(story, canvasmaker=make_canvas)
     pdf_bytes = buffer.getvalue()
     buffer.close()
