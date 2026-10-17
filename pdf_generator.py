@@ -1,7 +1,7 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MODULE: PDF GENERATOR (SPA COMPLIANT, PAGE TEMPLATES & FOOTER MUKTAMAD)
+MODULE: PDF GENERATOR (SPA COMPLIANT, PAGE TEMPLATES & CLEAN TEXT)
 ========================================================================
 """
 
@@ -163,13 +163,14 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     buffer = io.BytesIO()
     
     # TETAPAN ASAS BASE DOC TEMPLATE
+    # bottomMargin dinaikkan kepada 120.0pt supaya ada 1 baris kosong sebelum nombor muka surat (Y: 95.0)
     doc = BaseDocTemplate(
         buffer,
         pagesize=A4,
         leftMargin=56.7, 
         rightMargin=56.7,
         topMargin=28.3,
-        bottomMargin=105.0
+        bottomMargin=120.0
     )
 
     # Frame Muka Surat 1 (Ruang penuh)
@@ -326,13 +327,20 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     # -------------------------------------------------------------
     # 4. KOTAK AGIHAN TUGAS (DIJAJARKAN KIRI PENUH & BERLANGKAU)
     # -------------------------------------------------------------
-    jawatan_val = str(staf_row.get('Jawatan', '')).strip()
-    dtl_h = str(staf_row.get('Detail_H_1', '')).strip()
-    kod_h = str(staf_row.get('Kod_H_1', '')).strip()
-    jawatan_val = jawatan_val if jawatan_val not in ["nan", "None", ""] else (dtl_h if dtl_h not in ["nan", "None", ""] else "Guru Akademik Biasa")
+    
+    # Pembersihan teks 'nan' dari Pandas DataFrame
+    jawatan_val = str(staf_row.get('Jawatan', '')).replace('nan | ', '').replace('nan', '').strip()
+    dtl_h = str(staf_row.get('Detail_H_1', '')).replace('nan', '').strip()
+    kod_h = str(staf_row.get('Kod_H_1', '')).replace('nan', '').strip()
+    
+    if jawatan_val.startswith('| '):
+        jawatan_val = jawatan_val[2:]
+        
+    jawatan_val = jawatan_val if jawatan_val else (dtl_h if dtl_h else "Guru Akademik Biasa")
     jawatan_full = f"{kod_h} | {jawatan_val}" if kod_h and kod_h not in jawatan_val else jawatan_val
+    jawatan_full = jawatan_full.lstrip('| ').strip()
 
-    # 2.1 JAWATAN BERPORTFOLIO (1 Baris Langkau Sebelum Topik)
+    # 2.1 JAWATAN BERPORTFOLIO 
     story.append(Spacer(1, 14))
     story.append(Paragraph(f"2.1. JAWATAN BERPORTFOLIO: {jawatan_full}", body_style))
 
@@ -351,7 +359,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             story.append(Paragraph(f"2.1.{sub_count}. Mengajar {sub_val}{cls_str} ({wkt_num} Waktu)", body_style))
             sub_count += 1
 
-    # 2.2 PORTFOLIO TANPA JAWATAN (1 Baris Langkau Sebelum Topik)
+    # 2.2 PORTFOLIO TANPA JAWATAN 
     story.append(Spacer(1, 14))
     story.append(Paragraph("2.2. PORTFOLIO TANPA JAWATAN:", body_style))
     
@@ -372,7 +380,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     if p_count == 1: 
         story.append(Paragraph("<i>Tiada Jawatan Tanpa Portfolio Ditetapkan</i>", body_style))
 
-    # 2.3 JAWATANKUASA (1 Baris Langkau Sebelum Topik)
+    # 2.3 JAWATANKUASA 
     story.append(Spacer(1, 14))
     story.append(Paragraph("2.3. JAWATANKUASA:", body_style))
     
