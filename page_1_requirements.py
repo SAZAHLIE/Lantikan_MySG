@@ -375,8 +375,14 @@ def render_page_1():
             nama_gb = st.text_input("Nama Pengetua / Guru Besar *", value=info_sec.get('nama_gb', ''), placeholder="Contoh: SAZAHLIE BIN SAPAR", key="input_nama_gb")
             
             # ---------------------------------------------------------------
-            # TAMBAHAN RUANGAN TETAPAN PIN PADA BORANG LOG MASUK PERTAMA
+            # TAMBAHAN RUANGAN TETAPAN RUJUKAN & PIN PADA BORANG LOG MASUK PERTAMA
             # ---------------------------------------------------------------
+            no_rujukan = st.text_input(
+                "No. Rujukan Surat Lantikan", 
+                value=info_sec.get('no_rujukan', ''),
+                placeholder="Contoh: KP/XBA2004/MYSG/2027/01",
+                key="input_no_rujukan"
+            )
             admin_pin = st.text_input(
                 "Tetapan PIN Keselamatan Pentadbir *", 
                 value=info_sec.get('admin_pin', '1234'),
@@ -434,7 +440,8 @@ def render_page_1():
                         'no_faks': no_fax.strip(),
                         'emel_rasmi': emel_rasmi.strip(),
                         'nama_gb': nama_gb.upper().strip(),
-                        'admin_pin': admin_pin.strip(), # Sila pastikan param ini wujud di sini
+                        'no_rujukan': no_rujukan.strip(), # Sila pastikan param ini wujud di sini
+                        'admin_pin': admin_pin.strip(),
                         'tahun_sesi': tahun_sesi,
                         'logo_base64': logo_b64
                     }
