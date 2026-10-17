@@ -92,7 +92,7 @@ def render_page_2():
                 type="password",
                 help="PIN ini diperlukan untuk mendaftar, membuang, atau merombak tugas kakitangan."
             )
-            
+
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("🖼️ **Muat Naik Lencana Sekolah (Optional)**")
             uploaded_logo = st.file_uploader(
@@ -129,7 +129,7 @@ def render_page_2():
 
                 alamat_penuh = f"{alamat_1}, {alamat_2}, {negeri_negara}"
 
-updated_info = {
+                updated_info = {
                     'nama_sekolah': nama_sek.upper().strip(),
                     'kod_sekolah': kod_sek.upper().strip(),
                     'jenis_sekolah': jenis_sek,
