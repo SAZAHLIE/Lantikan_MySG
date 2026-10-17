@@ -86,7 +86,13 @@ def render_page_2():
                 value=info_sec.get('nama_gb', ''),
                 placeholder="Contoh: SAZAHLIE BIN SAPAR"
             )
-
+            admin_pin = st.text_input(
+                "Tetapan PIN Keselamatan Pentadbir *", 
+                value=info_sec.get('admin_pin', '1234'),
+                type="password",
+                help="PIN ini diperlukan untuk mendaftar, membuang, atau merombak tugas kakitangan."
+            )
+            
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("🖼️ **Muat Naik Lencana Sekolah (Optional)**")
             uploaded_logo = st.file_uploader(
