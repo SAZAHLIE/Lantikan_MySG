@@ -14,7 +14,7 @@ def render_page_2():
     st.caption("Lengkapkan maklumat rasmi sekolah untuk dipaparkan pada Kepala Surat Lantikan (Header KPM), Laporan, dan Penyata Beban Kerja.")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Ambil maklumat dari Session State sahaja (tiada lagi pembacaan fail .json tempatan)
+    # Ambil maklumat dari Session State
     info_sec = st.session_state.get('school_info', {})
 
     with st.form("form_profil_sekolah"):
@@ -86,6 +86,11 @@ def render_page_2():
                 value=info_sec.get('nama_gb', ''),
                 placeholder="Contoh: SAZAHLIE BIN SAPAR"
             )
+            no_rujukan = st.text_input(
+                "No. Rujukan Surat Lantikan", 
+                value=info_sec.get('no_rujukan', ''),
+                placeholder="Contoh: KP/XBA2004/MYSG/2027/01"
+            )
             admin_pin = st.text_input(
                 "Tetapan PIN Keselamatan Pentadbir *", 
                 value=info_sec.get('admin_pin', '1234'),
@@ -141,6 +146,7 @@ def render_page_2():
                     'no_faks': no_fax.strip(),
                     'emel_rasmi': emel_rasmi.strip(),
                     'nama_gb': nama_gb.upper().strip(),
+                    'no_rujukan': no_rujukan.strip(),
                     'admin_pin': admin_pin.strip(),
                     'tahun_sesi': tahun_sesi,
                     'logo_base64': logo_b64
