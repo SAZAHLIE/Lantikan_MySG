@@ -75,16 +75,20 @@ def render_navigation_bar(current_step=1, total_steps=3):
     # -------------------------------------------------------------------
     with col_nav4:
         with st.popover("💾 Simpan & Keluar", use_container_width=True):
-            st.markdown("### 🔒 Keluar Dari Sistem")
-            st.caption("Pilih kaedah keluar untuk keselamatan data (PDPA):")
+            st.markdown("### 🔒 Pengurusan Data & Sesi")
+            st.caption("Pilih tindakan pengurusan fail Vault (.mysg) anda:")
 
             pilihan_keluar = st.radio(
-                "Pilihan Keluar:",
-                ["💾 Simpan Vault (.mysg) & Keluar", "🧹 Keluar Tanpa Menyimpan"],
+                "Pilihan Tindakan:",
+                [
+                    "💾 Simpan Vault (.mysg) & Keluar", 
+                    "📥 Simpan Vault (.mysg) & Teruskan Kerja", 
+                    "🧹 Keluar Tanpa Menyimpan"
+                ],
                 key=f"popover_pilihan_keluar_{current_step}"
             )
 
-            if pilihan_keluar == "💾 Simpan Vault (.mysg) & Keluar":
+            if pilihan_keluar in ["💾 Simpan Vault (.mysg) & Keluar", "📥 Simpan Vault (.mysg) & Teruskan Kerja"]:
                 passphrase = st.text_input(
                     "Tetapkan Kata Laluan Vault (Min 4 Aksara):", 
                     type="password", 
@@ -123,10 +127,13 @@ def render_navigation_bar(current_step=1, total_steps=3):
                             key=f"btn_direct_download_vault_{current_step}"
                         )
                         
-                        st.info("⚠️ Sila pastikan muat turun selesai sepenuhnya terlebih dahulu. Kemudian klik butang di bawah untuk memadam memori sesi secara selamat.")
-                        if st.button("🧹 Selesai Muat Turun & Bersihkan Memori", use_container_width=True, key=f"btn_clear_exit_{current_step}"):
-                            st.session_state.clear()
-                            st.rerun()
+                        if pilihan_keluar == "💾 Simpan Vault (.mysg) & Keluar":
+                            st.info("⚠️ Sila pastikan muat turun selesai sepenuhnya terlebih dahulu. Kemudian klik butang di bawah untuk memadam memori sesi secara selamat.")
+                            if st.button("🧹 Selesai Muat Turun & Bersihkan Memori", use_container_width=True, key=f"btn_clear_exit_{current_step}"):
+                                st.session_state.clear()
+                                st.rerun()
+                        else:
+                            st.info("💡 Anda boleh teruskan kerja seperti biasa selepas muat turun fail Vault ini sebagai salinan keselamatan (backup).")
 
                     except Exception as e:
                         st.error(f"❌ Ralat menjana Vault: {str(e)}")
