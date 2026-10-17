@@ -283,7 +283,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     ]))
     
     story.append(rujukan_table)
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 16))
 
     # -------------------------------------------------------------
     # 2. PENERIMA & TAJUK SURAT
@@ -293,7 +293,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
 
     story.append(Paragraph(f"<b>{nama_staf}</b>", bold_body))
     story.append(Paragraph(f"No. KP: {no_kp}", body_style))
-    story.append(Spacer(1, 14)) # Tepat 1 Baris Kosong
+    story.append(Spacer(1, 14))
     
     story.append(Paragraph("Tuan / Puan,", body_style))
     story.append(Spacer(1, 14))
@@ -405,10 +405,10 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph("Sekian, terima kasih.", body_style))
     story.append(Spacer(1, 14))
 
-    story.append(Paragraph("<b>\"MALAYSIA MADANI\"</b>", bold_body))
-    story.append(Paragraph("<b>\"BERKHIDMAT UNTUK NEGARA\"</b>", bold_body))
+    # COGAN KATA NEGARA - Disatukan dalam satu perenggan tanpa baris kosong
+    slogan_negara = "<b>\"MALAYSIA MADANI\"</b><br/><b>\"BERKHIDMAT UNTUK NEGARA\"</b>"
+    story.append(Paragraph(slogan_negara, bold_body))
     
-    # RUANGAN TANDATANGAN: Ditetapkan 56pt (bersamaan 4 langkau baris kosong)
     story.append(Spacer(1, 14))
     story.append(Paragraph("Saya yang menjalankan amanah,", body_style))
     story.append(Spacer(1, 56))
