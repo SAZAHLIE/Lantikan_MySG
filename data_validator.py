@@ -87,9 +87,9 @@ def validate_and_clean_csv(uploaded_file):
     # A. Bersihkan Nama Staf
     df['Nama'] = df['Nama'].fillna('-').astype(str).str.strip().str.upper()
     
-    # B. Bersihkan No_KP
+    # B. Bersihkan No_KP (Penyelesaian Isu TypeError - Paksa string sebelum regex)
     if 'No_KP' in df.columns:
-        df['No_KP'] = df['No_KP'].fillna('-').astype(str).apply(lambda x: re.sub(r'[^0-9\-]', '', x))
+        df['No_KP'] = df['No_KP'].astype(str).replace(['nan', 'None', ''], '-').fillna('-').apply(lambda x: re.sub(r'[^0-9\-]', '', x))
     else:
         df['No_KP'] = '-'
         warnings.append("⚠️ Lajur 'No_KP' tidak ditemui. Nilai lalai '-' telah digunakan.")

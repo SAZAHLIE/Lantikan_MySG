@@ -9,6 +9,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+import datetime
 from mysg_core import (
     calculate_workload_df, 
     MYSG_PORTFOLIO_H_SR, 
@@ -57,7 +58,7 @@ def to_clean_int(val):
 def render_tab_5(school_info):
     """Menjana kandungan Tab 5: Penyelarasan Agihan Tugas Kakitangan."""
     st.subheader("⚙️ Penetapan Semula Agihan Tugas & Transisi Sesi Baharu")
-    st.caption("Kemaskini dan selaraskan agihan Subjek PdP, Portfolio Tanpa Jawatan (P), dan Jawatankuasa Sekolah (J) bagi kakitangan sedia ada.")
+    st.caption("Kemaskini dan selaraskan agihan Subjek PdP, Portfolio Tanpa Jawatan (P), dan Jawatankuasa Sekolah (J) bagi kakitangan sedia ada. PIN Pengesahan diperlukan.")
 
     raw_df = st.session_state.get('staff_df', pd.DataFrame())
     data_ver = st.session_state.get('data_version', 1)
@@ -195,69 +196,84 @@ def render_tab_5(school_info):
                     j_re_inputs[f'Detail_J_{i}'] = st.text_input(f"Butiran Detail J_{i}:", value=raw_dj, key=f"re_det_j_{staf_index}_{i}")
 
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # KAWALAN AKSES (RBAC) - PIN PENGESAHAN
+        pin_pengesahan_3 = st.text_input("🔑 Masukkan PIN Pengesahan Pentadbir untuk menyimpan perubahan:", type="password", key="pin_kemaskini_staf")
         btn_save_reassign = st.form_submit_button("💾 Simpan & Kemaskini Penyelarasan Tugas Kakitangan", type="primary", use_container_width=True)
 
         if btn_save_reassign:
-            # PENUKARAN KEPADA SENARAI DIKSIONARI UNTUK ELAK MENGGANTI LANGSUNG SEL FLOAT64 DATAFRAME
-            df_dict_list = df_staff.to_dict(orient='records')
-            target_dict = df_dict_list[staf_index]
+            if pin_pengesahan_3 != "1234":
+                st.error("🔒 PIN Pengesahan salah! Akses ditolak. Hanya pentadbir yang sah dibenarkan merombak tugas.")
+            else:
+                # PENUKARAN KEPADA SENARAI DIKSIONARI UNTUK ELAK MENGGANTI LANGSUNG SEL FLOAT64 DATAFRAME
+                df_dict_list = df_staff.to_dict(orient='records')
+                target_dict = df_dict_list[staf_index]
 
-            total_waktu_calc = 0
-            if staf_row.get('Kumpulan') == "Guru":
+                total_waktu_calc = 0
+                if staf_row.get('Kumpulan') == "Guru":
+                    for i in range(1, 16):
+                        if i <= max_pdp:
+                            s_val = to_clean_str(pdp_re_inputs.get(f'Subjek_{i}'))
+                            k_val = to_clean_str(pdp_re_inputs.get(f'Kelas_{i}'))
+                            w_val = to_clean_int(pdp_re_inputs.get(f'Waktu_{i}'))
+                        else:
+                            s_val = to_clean_str(target_dict.get(f'Subjek_{i}'))
+                            k_val = to_clean_str(target_dict.get(f'Kelas_{i}'))
+                            w_val = to_clean_int(target_dict.get(f'Waktu_{i}'))
+
+                        target_dict[f'Subjek_{i}'] = s_val if s_val else None
+                        target_dict[f'Kelas_{i}'] = k_val if k_val else None
+                        target_dict[f'Waktu_{i}'] = float(w_val) if (s_val and w_val > 0) else None
+                        if s_val and w_val > 0:
+                            total_waktu_calc += w_val
+
+                target_dict['JUMLAH_WAKTU_PDP'] = float(total_waktu_calc)
+
                 for i in range(1, 16):
-                    if i <= max_pdp:
-                        s_val = to_clean_str(pdp_re_inputs.get(f'Subjek_{i}'))
-                        k_val = to_clean_str(pdp_re_inputs.get(f'Kelas_{i}'))
-                        w_val = to_clean_int(pdp_re_inputs.get(f'Waktu_{i}'))
+                    if i <= max_p:
+                        kp_val = to_clean_str(p_re_inputs.get(f'Kod_P_{i}'))
+                        dp_val = to_clean_str(p_re_inputs.get(f'Detail_P_{i}'))
                     else:
-                        s_val = to_clean_str(target_dict.get(f'Subjek_{i}'))
-                        k_val = to_clean_str(target_dict.get(f'Kelas_{i}'))
-                        w_val = to_clean_int(target_dict.get(f'Waktu_{i}'))
+                        kp_val = to_clean_str(target_dict.get(f'Kod_P_{i}'))
+                        dp_val = to_clean_str(target_dict.get(f'Detail_P_{i}'))
 
-                    target_dict[f'Subjek_{i}'] = s_val if s_val else None
-                    target_dict[f'Kelas_{i}'] = k_val if k_val else None
-                    target_dict[f'Waktu_{i}'] = float(w_val) if (s_val and w_val > 0) else None
-                    if s_val and w_val > 0:
-                        total_waktu_calc += w_val
+                    target_dict[f'Kod_P_{i}'] = kp_val if kp_val else None
+                    target_dict[f'Detail_P_{i}'] = dp_val if dp_val else None
 
-            target_dict['JUMLAH_WAKTU_PDP'] = float(total_waktu_calc)
+                for i in range(1, 16):
+                    if i <= max_j:
+                        kj_val = to_clean_str(j_re_inputs.get(f'Kod_J_{i}'))
+                        dj_val = to_clean_str(j_re_inputs.get(f'Detail_J_{i}'))
+                    else:
+                        kj_val = to_clean_str(target_dict.get(f'Kod_J_{i}'))
+                        dj_val = to_clean_str(target_dict.get(f'Detail_J_{i}'))
 
-            for i in range(1, 16):
-                if i <= max_p:
-                    kp_val = to_clean_str(p_re_inputs.get(f'Kod_P_{i}'))
-                    dp_val = to_clean_str(p_re_inputs.get(f'Detail_P_{i}'))
-                else:
-                    kp_val = to_clean_str(target_dict.get(f'Kod_P_{i}'))
-                    dp_val = to_clean_str(target_dict.get(f'Detail_P_{i}'))
+                    target_dict[f'Kod_J_{i}'] = kj_val if kj_val else None
+                    target_dict[f'Detail_J_{i}'] = dj_val if dj_val else None
 
-                target_dict[f'Kod_P_{i}'] = kp_val if kp_val else None
-                target_dict[f'Detail_P_{i}'] = dp_val if dp_val else None
+                try:
+                    # BINA DATAFRAME BARU DARIPADA REKOD DIKSIONARI
+                    df_updated_new = pd.DataFrame(df_dict_list)
+                    df_recalculated = calculate_workload_df(df_updated_new, jenis_sek)
+                    st.session_state['staff_df'] = df_recalculated
+                    st.session_state['data_version'] = int(time.time())
+                    
+                    # REKOD LOG AKTIVITI
+                    if 'audit_log' not in st.session_state:
+                        st.session_state['audit_log'] = []
+                    st.session_state['audit_log'].append({
+                        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "action": "KEMASKINI TUGAS",
+                        "staff_name": selected_staf_name
+                    })
 
-            for i in range(1, 16):
-                if i <= max_j:
-                    kj_val = to_clean_str(j_re_inputs.get(f'Kod_J_{i}'))
-                    dj_val = to_clean_str(j_re_inputs.get(f'Detail_J_{i}'))
-                else:
-                    kj_val = to_clean_str(target_dict.get(f'Kod_J_{i}'))
-                    dj_val = to_clean_str(target_dict.get(f'Detail_J_{i}'))
-
-                target_dict[f'Kod_J_{i}'] = kj_val if kj_val else None
-                target_dict[f'Detail_J_{i}'] = dj_val if dj_val else None
-
-            try:
-                # BINA DATAFRAME BARU DARIPADA REKOD DIKSIONARI
-                df_updated_new = pd.DataFrame(df_dict_list)
-                df_recalculated = calculate_workload_df(df_updated_new, jenis_sek)
-                st.session_state['staff_df'] = df_recalculated
-                st.session_state['data_version'] = int(time.time())
-
-                st.toast(f"💾 Agihan tugas {selected_staf_name} berjaya dikemaskini!", icon="✅")
-                st.success(f"✅ Agihan tugas bagi **{selected_staf_name}** telah berjaya dikemaskini dan diselaraskan!")
-                time.sleep(1)
-                st.rerun()
-            except Exception as e:
-                st.toast("❌ Ralat dikemaskini tugas!", icon="🚨")
-                st.error(f"❌ Ralat semasa mengemaskini agihan tugas: {str(e)}")
+                    st.toast(f"💾 Agihan tugas {selected_staf_name} berjaya dikemaskini!", icon="✅")
+                    st.success(f"✅ Agihan tugas bagi **{selected_staf_name}** telah berjaya dikemaskini dan diselaraskan!")
+                    time.sleep(1)
+                    st.rerun()
+                except Exception as e:
+                    st.toast("❌ Ralat dikemaskini tugas!", icon="🚨")
+                    st.error(f"❌ Ralat semasa mengemaskini agihan tugas: {str(e)}")
 
     # BUTANG TAMBAH RUANG DINAMIK
     st.markdown("##### ➕ Tambah Ruang Input Tambahan Penyelarasan (Jika Perlu)")

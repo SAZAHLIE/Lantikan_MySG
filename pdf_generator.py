@@ -53,6 +53,15 @@ def format_tarikh_melayu(d):
     ]
     return f"{d.day} {bulan[d.month]} {d.year}"
 
+def mask_ic_number(ic_str):
+    """Fungsi Data Masking (PDPA) untuk menyembunyikan 4 digit terakhir No. KP."""
+    if not ic_str or ic_str in ["nan", "None", "-"]:
+        return "-"
+    ic_str = ic_str.replace("-", "").strip()
+    if len(ic_str) == 12:
+        return f"{ic_str[:6]}-{ic_str[6:8]}-XXXX"
+    return "XXXXXX-XX-XXXX"
+
 def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
 
@@ -161,7 +170,8 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     # 3. PENERIMA
     nama_staf = str(staf_row.get('Nama', '')).upper()
     raw_kp = str(staf_row.get('No_KP', '')).strip()
-    no_kp = "-" if raw_kp in ["nan", "None", ""] else raw_kp
+    # LAKSANAKAN DATA MASKING (PDPA)
+    no_kp = mask_ic_number(raw_kp)
 
     story.append(Paragraph(f"<b>{nama_staf}</b>", bold_body))
     story.append(Paragraph(f"No. KP: {no_kp}", body_style))
@@ -175,7 +185,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Spacer(1, 6))
 
     # 5. KANDUNGAN SURAT
-    p1 = "Dengan segala hormatnya perkara di atas adalah dirujuk bersama perkara-perkara berkaitan di bawah Akta Pendidikan 1996, Surat-surat Pekeliling Ikhtisas (SPI), तथा arahan dan garis panduan MySG KPM yang berkuat kuasa."
+    p1 = "Dengan segala hormatnya perkara di atas adalah dirujuk bersama perkara-perkara berkaitan di bawah Akta Pendidikan 1996, Surat-surat Pekeliling Ikhtisas (SPI), serta arahan dan garis panduan MySG KPM yang berkuat kuasa."
     p2 = "2. Sukacita dimaklumkan bahawa pihak sekolah melantik tuan/puan untuk memegang jawatan dan melaksanakan amanah seperti berikut berkuat kuasa mulai tarikh surat ini dikeluarkan sehingga ke suatu tarikh yang dimaklumkan kemudian:"
     story.append(Paragraph(p1, body_style))
     story.append(Spacer(1, 4))

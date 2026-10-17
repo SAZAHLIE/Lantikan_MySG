@@ -29,6 +29,15 @@ def get_local_image_base64(file_path):
             return ""
     return ""
 
+def mask_ic_number(ic_str):
+    """Fungsi Data Masking (PDPA) untuk menyembunyikan 4 digit terakhir No. KP."""
+    if not ic_str or ic_str in ["nan", "None", "-"]:
+        return "-"
+    ic_str = ic_str.replace("-", "").strip()
+    if len(ic_str) == 12:
+        return f"{ic_str[:6]}-{ic_str[6:8]}-XXXX"
+    return "XXXXXX-XX-XXXX"
+
 def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
     from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
 
@@ -65,7 +74,8 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
     # 4. MAKLUMAT STAF
     nama_staf = str(staf_row.get('Nama', '')).upper()
     raw_kp = str(staf_row.get('No_KP', '')).strip()
-    no_kp = "-" if raw_kp in ["nan", "None", ""] else raw_kp
+    # LAKSANAKAN DATA MASKING (PDPA)
+    no_kp = mask_ic_number(raw_kp)
 
     tarikh_hari_ini = format_tarikh_melayu(datetime.date.today())
 

@@ -8,6 +8,7 @@ MODULE: TAB 4 - PENDAFTARAN KAKITANGAN MASUK / KELUAR / PERTUKARAN
 import streamlit as st
 import pandas as pd
 import time
+import datetime
 from mysg_core import (
     calculate_workload_df, 
     MYSG_PORTFOLIO_H_SR, 
@@ -42,7 +43,7 @@ SUBJEK_KPM_SM = [
 def render_tab_4(school_info):
     """Menjana kandungan Tab 4: Pendaftaran Kakitangan Masuk / Keluar mengikut Dropdown Subjek KPM & Notifikasi Serta-Merta."""
     st.subheader("🔄 Pendaftaran Kakitangan Masuk / Keluar / Pertukaran")
-    st.caption("Urus pergerakan kakitangan sekolah secara langsung mengikut format skema dataset terlaras.")
+    st.caption("Urus pergerakan kakitangan sekolah secara langsung mengikut format skema dataset terlaras. PIN Pengesahan diperlukan.")
 
     df_staff = st.session_state.get('staff_df', pd.DataFrame())
     jenis_sek = school_info.get('jenis_sekolah', 'Sekolah Rendah')
@@ -141,10 +142,15 @@ def render_tab_4(school_info):
                         j_inputs[f'Detail_J_{i}'] = st.text_input(f"Butiran Detail J_{i}:", key=f"dyn_det_j_{i}")
 
             st.markdown("<br>", unsafe_allow_html=True)
+            
+            # KAWALAN AKSES (RBAC) - PIN PENGESAHAN
+            pin_pengesahan_1 = st.text_input("🔑 Masukkan PIN Pengesahan Pentadbir untuk menyimpan:", type="password", key="pin_tambah_staf")
             btn_add = st.form_submit_button("➕ Simpan & Daftarkan Kakitangan Baharu", type="primary", use_container_width=True)
 
             if btn_add:
-                if not nama_baharu.strip():
+                if pin_pengesahan_1 != "1234":
+                    st.error("🔒 PIN Pengesahan salah! Akses ditolak. Hanya pentadbir yang sah dibenarkan mengubah data.")
+                elif not nama_baharu.strip():
                     st.toast("⚠️ Sila masukkan Nama Penuh Kakitangan!", icon="⚠️")
                     st.error("⚠️ Sila masukkan Nama Penuh Kakitangan.")
                 else:
@@ -202,6 +208,15 @@ def render_tab_4(school_info):
                         df_recalculated = calculate_workload_df(df_combined_raw, jenis_sek)
                         st.session_state['staff_df'] = df_recalculated
                         st.session_state['data_version'] = int(time.time())
+                        
+                        # REKOD LOG AKTIVITI
+                        if 'audit_log' not in st.session_state:
+                            st.session_state['audit_log'] = []
+                        st.session_state['audit_log'].append({
+                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "action": "PENDAFTARAN BAHARU",
+                            "staff_name": nama_baharu.upper()
+                        })
                         
                         # NOTIFIKASI KEPADA PENGGUNA
                         st.toast(f"🎉 Kakitangan {nama_baharu.upper()} berjaya didaftarkan!", icon="✅")
@@ -263,19 +278,36 @@ def render_tab_4(school_info):
 
             with col_del_btn:
                 st.markdown("<br>", unsafe_allow_html=True)
+                
+                # KAWALAN AKSES (RBAC) - PIN PENGESAHAN
+                pin_pengesahan_2 = st.text_input("🔑 PIN Pentadbir:", type="password", key="pin_buang_staf")
+                
                 if st.button("🔴 Pengesahan Keluarkan Kakitangan", type="primary", use_container_width=True, key="btn_confirm_remove_staf"):
-                    df_filtered_raw = df_staff[df_staff['Nama'] != staf_to_remove].reset_index(drop=True)
-
-                    if not df_filtered_raw.empty:
-                        df_recalculated = calculate_workload_df(df_filtered_raw, jenis_sek)
-                        st.session_state['staff_df'] = df_recalculated
+                    if pin_pengesahan_2 != "1234":
+                        st.error("🔒 PIN Pengesahan salah! Akses ditolak.")
                     else:
-                        st.session_state['staff_df'] = pd.DataFrame()
+                        df_filtered_raw = df_staff[df_staff['Nama'] != staf_to_remove].reset_index(drop=True)
 
-                    st.session_state['data_version'] = int(time.time())
-                    st.toast(f"🗑️ Rekod {staf_to_remove} berjaya dikeluarkan!", icon="🗑️")
-                    st.success(f"✅ Rekod kakitangan **{staf_to_remove}** telah berjaya dikeluarkan.")
-                    time.sleep(1)
-                    st.rerun()
+                        if not df_filtered_raw.empty:
+                            df_recalculated = calculate_workload_df(df_filtered_raw, jenis_sek)
+                            st.session_state['staff_df'] = df_recalculated
+                        else:
+                            st.session_state['staff_df'] = pd.DataFrame()
+
+                        st.session_state['data_version'] = int(time.time())
+                        
+                        # REKOD LOG AKTIVITI
+                        if 'audit_log' not in st.session_state:
+                            st.session_state['audit_log'] = []
+                        st.session_state['audit_log'].append({
+                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "action": "PENGELUARAN REKOD",
+                            "staff_name": staf_to_remove
+                        })
+                        
+                        st.toast(f"🗑️ Rekod {staf_to_remove} berjaya dikeluarkan!", icon="🗑️")
+                        st.success(f"✅ Rekod kakitangan **{staf_to_remove}** telah berjaya dikeluarkan.")
+                        time.sleep(1)
+                        st.rerun()
         else:
             st.info("ℹ️ Tiada rekod kakitangan ditemui untuk dikeluarkan.")

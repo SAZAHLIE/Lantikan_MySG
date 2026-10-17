@@ -99,8 +99,10 @@ def render_navigation_bar(current_step=1, total_steps=3):
                         school_info = st.session_state.get('school_info', {})
                         staff_df = st.session_state.get('staff_df', pd.DataFrame())
                         staff_dict = staff_df.to_dict(orient='records') if isinstance(staff_df, pd.DataFrame) and not staff_df.empty else []
+                        audit_log = st.session_state.get('audit_log', [])
 
-                        payload = {'school_info': school_info, 'staff_df_dict': staff_dict}
+                        # Sertakan Log Audit (MAMPU ICT Standard)
+                        payload = {'school_info': school_info, 'staff_df_dict': staff_dict, 'audit_log': audit_log}
                         encrypted_bytes = encrypt_payload(payload, passphrase)
                         
                         kod_sek = school_info.get('kod_sekolah', 'SEKOLAH')

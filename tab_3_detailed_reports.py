@@ -9,7 +9,9 @@ import streamlit as st
 import pandas as pd
 import importlib
 import print_engine
-importlib.reload(print_engine) # Paksa re-load layout print engine terkini
+
+# Paksa re-load layout print engine terkini untuk memastikan tiada cache lama
+importlib.reload(print_engine)
 
 from print_engine import generate_detailed_comparison_html, generate_individual_detailed_report_html
 
@@ -78,16 +80,16 @@ def render_tab_3(school_info):
         with col_t3_title:
             st.markdown("#### 1. Ringkasan Perbandingan Purata Beban Kerja Kumpulan")
         with col_t3_print:
-            html_detail_comp = generate_detailed_comparison_html(df_display, school_info, df_summary_comp, st.session_state)
-            if st.download_button(
-                label="🖨️ Cetak Laporan Bandingan Kumpulan (A4)",
+            html_detail_comp = generate_detailed_comparison_html(df_display, "LAPORAN PERINCIAN BANDINGAN BEBAN TUGAS", school_info, st.session_state)
+            st.download_button(
+                label="🖨️ Cetak Laporan Bandingan Kumpulan",
                 data=html_detail_comp,
                 file_name="Laporan_Perincian_Bandingan_Beban_Tugas.html",
                 mime="text/html",
                 type="primary",
+                use_container_width=True,
                 key=f"btn_print_detail_comp_{data_ver}"
-            ):
-                st.toast("🖨️ Menjana Laporan Bandingan Kumpulan A4...", icon="🖨️")
+            )
 
         st.dataframe(df_summary_comp, use_container_width=True, key=f"tbl_tab3_comp_{data_ver}")
 
@@ -113,18 +115,26 @@ def render_tab_3(school_info):
 
         with col_ind_btn:
             st.markdown("<br>", unsafe_allow_html=True)
-            html_ind = generate_individual_detailed_report_html(staf_ind_row, school_info, df_summary_comp, st.session_state)
+            
+            # MEMANGGIL LAPORAN INDIVIDU A4 PORTRAIT BAHARU
+            html_ind = generate_individual_detailed_report_html(
+                staf_ind_row, 
+                school_info, 
+                df_display
+            )
+            
             clean_ind_name = str(selected_staf_ind).replace(" ", "_").replace("/", "_")
-            if st.download_button(
-                label=f"🖨️ Cetak Laporan Individu ({clean_ind_name[:12]}...)",
+            
+            # KEMASKINI PENAMAAN BUTANG: "Cetak Laporan Bandaingan Individu"
+            st.download_button(
+                label="🖨️ Cetak Laporan Bandaingan Individu",
                 data=html_ind,
                 file_name=f"Laporan_Individu_{clean_ind_name}.html",
                 mime="text/html",
                 type="primary",
                 use_container_width=True,
-                key=f"btn_print_ind_{clean_ind_name}_{data_ver}"
-            ):
-                st.toast(f"📄 Menjana Laporan Individu: {selected_staf_ind}", icon="🖨️")
+                key=f"btn_print_bandaingan_indiv_{clean_ind_name}_{data_ver}"
+            )
 
         # Paparan Kad Bandingan Individu vs Kumpulan
         m_c1, m_c2, m_c3, m_c4 = st.columns(4)

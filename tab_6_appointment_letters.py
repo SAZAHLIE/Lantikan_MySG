@@ -30,8 +30,9 @@ def render_tab_6(school_info):
             
             clean_name = str(staf_selected_name).replace(" ", "_").replace("/", "_")
             
+            # BUTANG CETAK SURAT LANTIKAN TANPA NAMA PEGAWAI
             st.download_button(
-                label=f"🖨️ Cetak Surat Lantikan ({clean_name[:15]}...)",
+                label="🖨️ Cetak Surat Lantikan",
                 data=html_letter,
                 file_name=f"Surat_Lantikan_{clean_name}.html",
                 mime="text/html",

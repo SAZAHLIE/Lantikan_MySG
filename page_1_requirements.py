@@ -9,9 +9,23 @@ import streamlit as st
 import json
 import base64
 import os
+import re
 import pandas as pd
 from crypto_vault import encrypt_payload, decrypt_payload
 from mysg_core import calculate_workload_df
+
+def sanitize_dataframe_text(df):
+    """Fungsi keselamatan ICT: Membersihkan sebarang tag HTML / skrip berbahaya pada data."""
+    if df is not None and not df.empty:
+        # Bersihkan lajur 'Nama'
+        if 'Nama' in df.columns:
+            df['Nama'] = df['Nama'].apply(lambda x: re.sub(r'<[^>]*>', '', str(x)) if pd.notna(x) else x)
+        
+        # Bersihkan lajur-lajur teks penting yang lain
+        for col in df.columns:
+            if col.startswith(('Subjek_', 'Kelas_', 'Detail_')):
+                df[col] = df[col].apply(lambda x: re.sub(r'<[^>]*>', '', str(x)) if pd.notna(x) else x)
+    return df
 
 def generate_106_col_template_df():
     """
@@ -301,8 +315,16 @@ def render_page_1():
                     if 'school_info' in payload:
                         st.session_state.school_info = payload['school_info']
                     
+                    if 'audit_log' in payload:
+                        st.session_state.audit_log = payload['audit_log']
+                    else:
+                        st.session_state.audit_log = []
+                    
                     if 'staff_df_dict' in payload and payload['staff_df_dict']:
                         df_raw = pd.DataFrame.from_dict(payload['staff_df_dict'])
+                        # Laksanakan proses Sanitasi
+                        df_raw = sanitize_dataframe_text(df_raw)
+                        
                         jenis_sekolah = st.session_state.get('school_info', {}).get('jenis_sekolah', 'Sekolah Rendah')
                         df_processed = calculate_workload_df(df_raw, jenis_sekolah)
                         st.session_state.staff_df = df_processed
@@ -408,6 +430,10 @@ def render_page_1():
 
                     # 2. Baca dan Hitung Beban Kerja CSV Staf
                     df_raw = pd.read_csv(uploaded_csv)
+                    
+                    # Laksanakan proses Sanitasi
+                    df_raw = sanitize_dataframe_text(df_raw)
+                    
                     df_processed = calculate_workload_df(df_raw, jenis_sek)
                     st.session_state.staff_df = df_processed
 
