@@ -5,3 +5,4 @@ cryptography
 reportlab
 Pillow
 xhtml2pdf
+pypdf
