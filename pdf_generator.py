@@ -411,7 +411,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     
     story.append(Spacer(1, 14))
     story.append(Paragraph("Saya yang menjalankan amanah,", body_style))
-    story.append(Spacer(1, 56))
+    story.append(Spacer(1, 54))
     
     story.append(Paragraph(f"<b>{nama_gb}</b>", bold_body))
     story.append(Paragraph(f"{gelaran_gb}", body_style))
