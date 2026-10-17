@@ -27,9 +27,25 @@ def get_official_letterhead(school_info):
 
     # 1. PANGGILAN DATA TEPAT DARI BORANG PROFIL SEKOLAH
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR')).upper()
-    baris_1 = str(school_info.get('alamat_1', 'KM 4, JALAN LEILA,')).upper()
-    baris_2 = str(school_info.get('alamat_2', '90000 SANDAKAN,')).upper()
-    baris_3 = str(school_info.get('negeri_negara', 'SABAH, MALAYSIA')).upper()
+    
+    # LOGIK KESELAMATAN ALAMAT (Jika fail Vault lama digunakan dan alamat_1 kosong)
+    b1 = str(school_info.get('alamat_1', '')).strip().upper()
+    b2 = str(school_info.get('alamat_2', '')).strip().upper()
+    b3 = str(school_info.get('negeri_negara', '')).strip().upper()
+
+    if not b1 and school_info.get('alamat_sekolah'):
+        parts = [p.strip() for p in str(school_info.get('alamat_sekolah')).split(',') if p.strip()]
+        if len(parts) >= 3:
+            b1 = parts[0].upper()
+            b2 = ", ".join(parts[1:-1]).upper()
+            b3 = parts[-1].upper()
+        else:
+            b1 = str(school_info.get('alamat_sekolah')).upper()
+
+    # Nilai lalai jika data masih kosong sepenuhnya
+    if not b1: b1 = "KM 4, JALAN LEILA,"
+    if not b2: b2 = "90000 SANDAKAN,"
+    if not b3: b3 = "SABAH, MALAYSIA"
     
     no_tel = str(school_info.get('no_telefon', '089-612673'))
     no_fax = str(school_info.get('no_faks', '089-612673'))
@@ -41,15 +57,14 @@ def get_official_letterhead(school_info):
                 get_image_base64("jata_negara.jpg"))
     
     if not jata_b64:
-        jata_html = '<img src="https://upload.wikimedia.org/wikipedia/commons/2/26/Coat_of_arms_of_Malaysia.svg" style="height: 70px; width: auto; object-fit: contain;" alt="Jata Negara">'
+        jata_html = '<img src="https://upload.wikimedia.org/wikipedia/commons/2/26/Coat_of_arms_of_Malaysia.svg" style="height: 75px; width: auto; object-fit: contain;" alt="Jata Negara">'
     else:
-        jata_html = f'<img src="{jata_b64}" style="height: 70px; width: auto; object-fit: contain;" alt="Jata Negara">'
+        jata_html = f'<img src="{jata_b64}" style="height: 75px; width: auto; object-fit: contain;" alt="Jata Negara">'
 
-    # 3. LOGIK LENCANA SEKOLAH (DIKEMAS KINI UNTUK MENGAMBIL DARI MUAT NAIK BORANG)
+    # 3. LOGIK LENCANA SEKOLAH (Mengambil terus dari muat naik borang)
     logo_b64 = school_info.get('logo_base64', '')
     
     if not logo_b64:
-        # Fallback jika tiada lencana dimuat naik di borang
         logo_b64 = (get_image_base64("logo.png") or 
                     get_image_base64("logo.jpg") or 
                     get_image_base64("logo_sekolah.png") or 
@@ -57,49 +72,49 @@ def get_official_letterhead(school_info):
                     get_image_base64("lencana.png"))
     
     if not logo_b64:
-        logo_html = '<div style="height: 70px; width: 60px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #888;">[Logo Sekolah]</div>'
+        logo_html = '<div style="height: 75px; width: 65px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #888;">[Logo Sekolah]</div>'
     else:
-        logo_html = f'<img src="{logo_b64}" style="height: 70px; width: auto; max-width: 90px; object-fit: contain;" alt="Logo Sekolah">'
+        logo_html = f'<img src="{logo_b64}" style="height: 75px; width: auto; max-width: 90px; object-fit: contain;" alt="Logo Sekolah">'
 
-    # 4. PENJANAAN HTML
+    # 4. PENJANAAN HTML KEPALA SURAT
     return f"""
     <div style="font-family: Arial, Helvetica, sans-serif; color: #000000; width: 100%; margin-bottom: 6px;">
         <table style="width: 100%; border-collapse: collapse; border: none; margin: 0; padding: 0;">
             <tr style="vertical-align: top;">
-                <td style="width: 10%; text-align: left; padding: 0;">
+                <td style="width: 12%; text-align: left; padding: 0;">
                     {jata_html}
                 </td>
-                <td style="width: 58%; text-align: left; padding-left: 10px; white-space: nowrap;">
-                    <div style="font-size: 12pt; font-weight: bold; font-family: 'Arial Black', Arial, sans-serif; letter-spacing: 0.5px; line-height: 1.15; text-transform: uppercase;">
-                        KEMENTERIAN PENDIDIKAN
+                <td style="width: 53%; text-align: left; padding-left: 8px; white-space: nowrap;">
+                    <div style="font-size: 13pt; font-weight: bold; font-family: 'Arial Black', Arial, sans-serif; letter-spacing: 0.5px; line-height: 1.15; text-transform: uppercase;">
+                        KEMENTERIAN PENDIDIKAN MALAYSIA
                     </div>
-                    <div style="font-size: 12pt; font-weight: bold; line-height: 1.15; margin-top: 1px;">
+                    <div style="font-size: 12pt; font-weight: bold; line-height: 1.2; margin-top: 2px;">
                         {nama_sekolah}
                     </div>
-                    <div style="font-size: 12pt; font-weight: bold; line-height: 1.15;">
-                        {baris_1}
+                    <div style="font-size: 11pt; font-weight: normal; line-height: 1.2; margin-top: 2px;">
+                        {b1}
                     </div>
-                    <div style="font-size: 12pt; font-weight: bold; line-height: 1.15;">
-                        {baris_2}
+                    <div style="font-size: 11pt; font-weight: normal; line-height: 1.2;">
+                        {b2}
                     </div>
-                    <div style="font-size: 12pt; font-weight: bold; line-height: 1.15; text-transform: uppercase;">
-                        {baris_3}
+                    <div style="font-size: 11pt; font-weight: normal; line-height: 1.2; text-transform: uppercase;">
+                        {b3}
                     </div>
                 </td>
-                <td style="width: 22%; text-align: left; vertical-align: bottom; font-size: 9pt; padding-right: 5px;">
-                    <table style="border-collapse: collapse; border: none; font-size: 9pt; font-family: Arial, sans-serif; text-align: left;">
+                <td style="width: 25%; text-align: left; vertical-align: bottom; font-size: 9.5pt; padding-right: 5px; padding-bottom: 2px;">
+                    <table style="border-collapse: collapse; border: none; font-size: 9.5pt; font-family: Arial, sans-serif; text-align: left; width: 100%;">
                         <tr>
-                            <td style="text-align: left; padding-right: 4px; white-space: nowrap;">Tel</td>
-                            <td style="text-align: center; padding-right: 4px;">:</td>
-                            <td style="text-align: left; white-space: nowrap;">{no_tel}</td>
+                            <td style="text-align: left; padding-right: 4px; width: 25%;">Tel</td>
+                            <td style="text-align: center; padding-right: 4px; width: 5%;">:</td>
+                            <td style="text-align: left; white-space: nowrap; width: 70%;">{no_tel}</td>
                         </tr>
                         <tr>
-                            <td style="text-align: left; padding-right: 4px; white-space: nowrap;">Fax</td>
+                            <td style="text-align: left; padding-right: 4px;">Faks</td>
                             <td style="text-align: center; padding-right: 4px;">:</td>
                             <td style="text-align: left; white-space: nowrap;">{no_fax}</td>
                         </tr>
                         <tr>
-                            <td style="text-align: left; padding-right: 4px; white-space: nowrap;">Email</td>
+                            <td style="text-align: left; padding-right: 4px;">Emel</td>
                             <td style="text-align: center; padding-right: 4px;">:</td>
                             <td style="text-align: left; white-space: nowrap;">{email_sekolah}</td>
                         </tr>
@@ -110,7 +125,7 @@ def get_official_letterhead(school_info):
                 </td>
             </tr>
         </table>
-        <hr style="border: none; border-top: 2.5px solid #000000; margin-top: 6px; margin-bottom: 10px; opacity: 1;">
+        <hr style="border: none; border-top: 2.5px solid #000000; margin-top: 8px; margin-bottom: 10px; opacity: 1;">
     </div>
     """
 
