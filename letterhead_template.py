@@ -28,10 +28,14 @@ def get_official_letterhead(school_info):
     # 1. PANGGILAN DATA TEPAT DARI BORANG PROFIL SEKOLAH
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR')).upper()
     
-    # LOGIK KESELAMATAN ALAMAT (Jika fail Vault lama digunakan dan alamat_1 kosong)
     b1 = str(school_info.get('alamat_1', '')).strip().upper()
     b2 = str(school_info.get('alamat_2', '')).strip().upper()
     b3 = str(school_info.get('negeri_negara', '')).strip().upper()
+
+    # PEMBERSIHAN: Buang sisa koma bertindih jika data dari Vault lama rosak
+    if not b1.replace(',', '').strip(): b1 = ''
+    if not b2.replace(',', '').strip(): b2 = ''
+    if not b3.replace(',', '').strip(): b3 = ''
 
     if not b1 and school_info.get('alamat_sekolah'):
         parts = [p.strip() for p in str(school_info.get('alamat_sekolah')).split(',') if p.strip()]
@@ -42,7 +46,7 @@ def get_official_letterhead(school_info):
         else:
             b1 = str(school_info.get('alamat_sekolah')).upper()
 
-    # Nilai lalai jika data masih kosong sepenuhnya
+    # Nilai lalai mutlak jika tiada data langsung
     if not b1: b1 = "KM 4, JALAN LEILA,"
     if not b2: b2 = "90000 SANDAKAN,"
     if not b3: b3 = "SABAH, MALAYSIA"
@@ -61,7 +65,7 @@ def get_official_letterhead(school_info):
     else:
         jata_html = f'<img src="{jata_b64}" style="height: 75px; width: auto; object-fit: contain;" alt="Jata Negara">'
 
-    # 3. LOGIK LENCANA SEKOLAH (Mengambil terus dari muat naik borang)
+    # 3. LOGIK LENCANA SEKOLAH
     logo_b64 = school_info.get('logo_base64', '')
     
     if not logo_b64:
