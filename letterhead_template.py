@@ -25,22 +25,17 @@ def get_official_letterhead(school_info):
     if not isinstance(school_info, dict):
         school_info = {}
 
-    nama_sekolah = school_info.get('nama_sekolah', 'Sekolah Kebangsaan Bandar Sandakan').title()
-    alamat = school_info.get('alamat_sekolah', 'W.D.T. No. 297, 90009, Sandakan, SABAH, MALAYSIA')
-    no_tel = school_info.get('no_tel', '089-612673')
-    no_fax = school_info.get('no_fax', '089-612673')
-    email_sekolah = school_info.get('email_sekolah', 'xba2004@moe.edu.my')
+    # 1. PANGGILAN DATA TEPAT DARI BORANG PROFIL SEKOLAH
+    nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR')).upper()
+    baris_1 = str(school_info.get('alamat_1', 'KM 4, JALAN LEILA,')).upper()
+    baris_2 = str(school_info.get('alamat_2', '90000 SANDAKAN,')).upper()
+    baris_3 = str(school_info.get('negeri_negara', 'SABAH, MALAYSIA')).upper()
+    
+    no_tel = str(school_info.get('no_telefon', '089-612673'))
+    no_fax = str(school_info.get('no_faks', '089-612673'))
+    email_sekolah = str(school_info.get('emel_rasmi', 'xba2004@moe.edu.my'))
 
-    alamat_lines = [line.strip() for line in alamat.split(',') if line.strip()]
-    if len(alamat_lines) >= 3:
-        baris_1 = alamat_lines[0]
-        baris_2 = ", ".join(alamat_lines[1:-1])
-        baris_3 = alamat_lines[-1]
-    else:
-        baris_1 = "W.D.T. No. 297"
-        baris_2 = "90009, Sandakan"
-        baris_3 = "SABAH, MALAYSIA"
-
+    # 2. LOGIK JATA NEGARA
     jata_b64 = (get_image_base64("jata_negara.png") or 
                 get_image_base64("jata.png") or 
                 get_image_base64("jata_negara.jpg"))
@@ -50,17 +45,23 @@ def get_official_letterhead(school_info):
     else:
         jata_html = f'<img src="{jata_b64}" style="height: 70px; width: auto; object-fit: contain;" alt="Jata Negara">'
 
-    logo_b64 = (get_image_base64("logo.png") or 
-                get_image_base64("logo.jpg") or 
-                get_image_base64("logo_sekolah.png") or 
-                get_image_base64("logo_sekolah.jpg") or 
-                get_image_base64("lencana.png"))
+    # 3. LOGIK LENCANA SEKOLAH (DIKEMAS KINI UNTUK MENGAMBIL DARI MUAT NAIK BORANG)
+    logo_b64 = school_info.get('logo_base64', '')
+    
+    if not logo_b64:
+        # Fallback jika tiada lencana dimuat naik di borang
+        logo_b64 = (get_image_base64("logo.png") or 
+                    get_image_base64("logo.jpg") or 
+                    get_image_base64("logo_sekolah.png") or 
+                    get_image_base64("logo_sekolah.jpg") or 
+                    get_image_base64("lencana.png"))
     
     if not logo_b64:
         logo_html = '<div style="height: 70px; width: 60px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #888;">[Logo Sekolah]</div>'
     else:
-        logo_html = f'<img src="{logo_b64}" style="height: 70px; width: auto; object-fit: contain;" alt="Logo Sekolah">'
+        logo_html = f'<img src="{logo_b64}" style="height: 70px; width: auto; max-width: 90px; object-fit: contain;" alt="Logo Sekolah">'
 
+    # 4. PENJANAAN HTML
     return f"""
     <div style="font-family: Arial, Helvetica, sans-serif; color: #000000; width: 100%; margin-bottom: 6px;">
         <table style="width: 100%; border-collapse: collapse; border: none; margin: 0; padding: 0;">
@@ -104,7 +105,7 @@ def get_official_letterhead(school_info):
                         </tr>
                     </table>
                 </td>
-                <td style="width: 10%; text-align: right; padding: 0;">
+                <td style="width: 10%; text-align: right; padding: 0; vertical-align: middle;">
                     {logo_html}
                 </td>
             </tr>
