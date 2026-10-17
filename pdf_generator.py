@@ -37,7 +37,7 @@ class NumberedCanvas(canvas.Canvas):
             self.__dict__.update(state)
             if self._pageNumber < num_pages:
                 self.setFont("Helvetica-Bold", 10)
-                self.drawRightString(A4[0] - 36, 25, f"...{self._pageNumber + 1}/")
+                self.drawRightString(A4[0] - 56.7, 25, f"...{self._pageNumber + 1}/")
             canvas.Canvas.showPage(self)
         canvas.Canvas.save(self)
 
@@ -135,7 +135,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     col_jata = jata_img if jata_img else Paragraph("<b>MALAYSIA</b>", body_style)
 
     logo_b64 = school_info.get('logo_base64', '')
-    # Lencana sekolah dikecilkan kepada maksimum 50x50
     logo_sek_img = get_reportlab_image_from_b64(logo_b64, max_width=50, max_height=50) 
     col_logo = logo_sek_img if logo_sek_img else Paragraph("", body_style)
 
@@ -163,7 +162,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     )
     header_p = Paragraph(header_text, ParagraphStyle('HeaderCenterText', parent=styles['Normal'], fontName='Helvetica', leading=12.5, alignment=TA_LEFT))
 
-    # 3. MAKLUMAT HUBUNGI (Saiz 8)
+    # 3. MAKLUMAT HUBUNGI
     no_tel = str(school_info.get('no_telefon', '089-612673'))
     no_fax = str(school_info.get('no_faks', '089-612673'))
     emel_rasmi = str(school_info.get('emel_rasmi', 'xba2004@moe.edu.my'))
@@ -177,21 +176,20 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10.5, alignment=TA_LEFT)
     )
 
-    # 4. JADUAL HEADER (Penjajaran Bawah, Lebar Lajur Disesuaikan Untuk E-mel)
-    # Total lebar A4 (595.27) tolak margin kiri kanan (56.7 x 2) = 481.87
+    # 4. JADUAL HEADER
     header_table = Table([[col_jata, header_p, contact_p, col_logo]], colWidths=[78, 220, 128, 55])
     header_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'), # Rapat ke garisan bawah
+        ('VALIGN', (0,0), (0,0), 'TOP'),       # JATA NEGARA DIJAJARKAN KE ATAS (TOP)
+        ('VALIGN', (1,0), (-1,-1), 'BOTTOM'),  # Elemen lain rata pada garisan bawah (BOTTOM)
         ('ALIGN', (0,0), (2,0), 'LEFT'),
         ('ALIGN', (3,0), (3,0), 'RIGHT'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0), # Pad sifar di bawah
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     
     story.append(header_table)
-    # Garisan tebal 1pt, jarak sifar dari teks di atas
     story.append(HRFlowable(width="100%", thickness=1.0, color=colors.black, spaceBefore=0, spaceAfter=8))
 
     # 5. RUJUKAN & TARIKH
@@ -210,7 +208,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         ['', Paragraph(f"Ruj. Kami: {no_ruj_format}", ruj_style)],
         ['', Paragraph(f"Tarikh: {tarikh_hari_ini}", ruj_style)]
     ]
-    # Pelarasan lebar (298) supaya Ruj/Tarikh sejajar dengan titik mula maklumat hubungi (78+220)
+    
     rujukan_table = Table(rujukan_table_data, colWidths=[298, 183])
     rujukan_table.setStyle(TableStyle([
         ('ALIGN', (1,0), (1,-1), 'LEFT'),
