@@ -129,7 +129,7 @@ def render_page_2():
 
                 alamat_penuh = f"{alamat_1}, {alamat_2}, {negeri_negara}"
 
-                updated_info = {
+updated_info = {
                     'nama_sekolah': nama_sek.upper().strip(),
                     'kod_sekolah': kod_sek.upper().strip(),
                     'jenis_sekolah': jenis_sek,
@@ -141,6 +141,7 @@ def render_page_2():
                     'no_faks': no_fax.strip(),
                     'emel_rasmi': emel_rasmi.strip(),
                     'nama_gb': nama_gb.upper().strip(),
+                    'admin_pin': admin_pin.strip(),
                     'tahun_sesi': tahun_sesi,
                     'logo_base64': logo_b64
                 }
