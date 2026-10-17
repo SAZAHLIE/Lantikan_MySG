@@ -71,7 +71,7 @@ def render_tab_4(school_info):
         st.markdown("##### 📝 Borang Pendaftaran Kakitangan Baharu")
         st.info("Sila isi maklumat kakitangan baharu di bawah. Anda boleh menambah Subjek PdP, Portfolio (P), dan Jawatankuasa (J).")
 
-        with st.form(key="form_add_staff_dynamic", clear_on_submit=False):
+        with st.form(key="form_add_staff_dynamic", clear_on_submit=True):
             
             # SEKSYEN 1: PROFIL PEGAWAI & JAWATAN HAKIKI
             st.markdown("#### 1. Maklumat Peribadi & Portfolio Hakiki (Kod H)")
