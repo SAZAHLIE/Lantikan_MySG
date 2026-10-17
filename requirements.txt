@@ -6,3 +6,4 @@ reportlab
 Pillow
 xhtml2pdf
 pypdf
+PyPDF2
