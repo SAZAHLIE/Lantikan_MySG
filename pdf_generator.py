@@ -132,11 +132,15 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     header_p = Paragraph(header_text, ParagraphStyle('HeaderCenterText', parent=styles['Normal'], fontName='Helvetica', leading=12.5, alignment=TA_LEFT))
 
     # -------------------------------------------------------------
-    # 3. MAKLUMAT HUBUNGI
+    # 3. MAKLUMAT HUBUNGI & PEMBOLEH UBAH PENTING LAIN
     # -------------------------------------------------------------
     no_tel = str(school_info.get('no_telefon', '089-612673'))
     no_fax = str(school_info.get('no_faks', '089-612673'))
     emel_rasmi = str(school_info.get('emel_rasmi', 'xba2004@moe.edu.my'))
+    
+    # VARIABEL YANG HILANG SEBELUMNYA TELAH DIKEMBALIKAN DI SINI
+    tahun_sesi = str(school_info.get('tahun_sesi', '2027'))
+    nama_gb = str(school_info.get('nama_gb', 'AHMAD BIN MOHD')).upper()
 
     contact_style = ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11, alignment=TA_LEFT)
     contact_p = Paragraph(
