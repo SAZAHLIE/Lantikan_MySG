@@ -329,29 +329,33 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
 
     df_out['JUMLAH_JAM_PORTFOLIO_H'] = df_out.apply(get_jam_h, axis=1)
 
-    # 4. Hitung Jam Portfolio Tanpa Jawatan P (Dinamik)
+    # 4. Hitung Jam Portfolio Tanpa Jawatan P (Dinamik & Sanitized)
     p_cols = [c for c in df_out.columns if c.startswith('Kod_P_')]
     def get_jam_p(row):
         total_p = 0.0
         for pc in p_cols:
-            kod = str(row.get(pc, '')).strip()
-            if kod in MYSG_PORTFOLIO_P:
-                total_p += MYSG_PORTFOLIO_P[kod][1]
-            elif kod and kod != '-' and kod != 'nan':
+            kod_raw = str(row.get(pc, '')).strip()
+            kod_clean = kod_raw.split('|')[0].strip() if '|' in kod_raw else kod_raw
+            
+            if kod_clean in MYSG_PORTFOLIO_P:
+                total_p += MYSG_PORTFOLIO_P[kod_clean][1]
+            elif kod_raw.lower() not in ['', '-', 'nan', 'none', 'null']:
                 total_p += 1.5
         return total_p
 
     df_out['JUMLAH_JAM_PORTFOLIO_P'] = df_out.apply(get_jam_p, axis=1) if p_cols else 0.0
 
-    # 5. Hitung Jam Jawatankuasa J (Dinamik)
+    # 5. Hitung Jam Jawatankuasa J (Dinamik & Sanitized)
     j_cols = [c for c in df_out.columns if c.startswith('Kod_J_')]
     def get_jam_j(row):
         total_j = 0.0
         for jc in j_cols:
-            kod = str(row.get(jc, '')).strip()
-            if kod in MYSG_JAWATANKUASA_J:
-                total_j += MYSG_JAWATANKUASA_J[kod][1]
-            elif kod and kod != '-' and kod != 'nan':
+            kod_raw = str(row.get(jc, '')).strip()
+            kod_clean = kod_raw.split('|')[0].strip() if '|' in kod_raw else kod_raw
+            
+            if kod_clean in MYSG_JAWATANKUASA_J:
+                total_j += MYSG_JAWATANKUASA_J[kod_clean][1]
+            elif kod_raw.lower() not in ['', '-', 'nan', 'none', 'null']:
                 total_j += 1.0
         return total_j
 
