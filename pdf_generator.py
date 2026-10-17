@@ -1,7 +1,7 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MODULE: PDF GENERATOR (MEMATUHI SPA BIL 1 TAHUN 2013 KERAJAAN MALAYSIA)
+MODULE: PDF GENERATOR (STABIL, HIGH-RES JATA, AUTO PAGE NUM, MYSG KPM)
 ========================================================================
 """
 
@@ -60,7 +60,6 @@ def fetch_jata_negara_online():
         return ""
 
 def get_reportlab_image_from_b64(b64_str, max_width=73.7, max_height=56.7):
-    # 26mm = 73.7 pt, 20mm = 56.7 pt mengikut pekeliling
     if not b64_str or len(b64_str) < 30:
         return None
     try:
@@ -108,7 +107,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        leftMargin=56.7, # 20mm margin kiri mengikut SPA
+        leftMargin=56.7, 
         rightMargin=56.7,
         topMargin=28.3,
         bottomMargin=28.3
@@ -136,8 +135,8 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     col_jata = jata_img if jata_img else Paragraph("<b>MALAYSIA</b>", body_style)
 
     logo_b64 = school_info.get('logo_base64', '')
-    # Lencana sekolah dikecilkan lagi (maksimum 50x50)
-    logo_sek_img = get_reportlab_image_from_b64(logo_b64, max_width=50.0, max_height=50.0) 
+    # Lencana sekolah dikecilkan kepada maksimum 50x50
+    logo_sek_img = get_reportlab_image_from_b64(logo_b64, max_width=50, max_height=50) 
     col_logo = logo_sek_img if logo_sek_img else Paragraph("", body_style)
 
     # 2. MAKLUMAT SEKOLAH & ALAMAT
@@ -164,7 +163,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     )
     header_p = Paragraph(header_text, ParagraphStyle('HeaderCenterText', parent=styles['Normal'], fontName='Helvetica', leading=12.5, alignment=TA_LEFT))
 
-    # 3. MAKLUMAT HUBUNGI (Saiz 8.5, Leading 10)
+    # 3. MAKLUMAT HUBUNGI (Saiz 8)
     no_tel = str(school_info.get('no_telefon', '089-612673'))
     no_fax = str(school_info.get('no_faks', '089-612673'))
     emel_rasmi = str(school_info.get('emel_rasmi', 'xba2004@moe.edu.my'))
@@ -175,24 +174,24 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         f"Tel: {no_tel}<br/>"
         f"Faks: {no_fax}<br/>"
         f"Emel: {emel_rasmi}", 
-        ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=10, alignment=TA_LEFT)
+        ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10.5, alignment=TA_LEFT)
     )
 
-    # 4. JADUAL HEADER 
-    # Lajur ke-3 (Contact) dibesarkan sikit agar emel tidak turun baris (80 + 232 + 115 + 55 = 482)
-    header_table = Table([[col_jata, header_p, contact_p, col_logo]], colWidths=[80, 232, 115, 55])
+    # 4. JADUAL HEADER (Penjajaran Bawah, Lebar Lajur Disesuaikan Untuk E-mel)
+    # Total lebar A4 (595.27) tolak margin kiri kanan (56.7 x 2) = 481.87
+    header_table = Table([[col_jata, header_p, contact_p, col_logo]], colWidths=[78, 220, 128, 55])
     header_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
+        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'), # Rapat ke garisan bawah
         ('ALIGN', (0,0), (2,0), 'LEFT'),
         ('ALIGN', (3,0), (3,0), 'RIGHT'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0), # Pad sifar di bawah
         ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     
     story.append(header_table)
-    # spaceBefore diletakkan 0 agar melekat pada header
+    # Garisan tebal 1pt, jarak sifar dari teks di atas
     story.append(HRFlowable(width="100%", thickness=1.0, color=colors.black, spaceBefore=0, spaceAfter=8))
 
     # 5. RUJUKAN & TARIKH
@@ -211,8 +210,8 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         ['', Paragraph(f"Ruj. Kami: {no_ruj_format}", ruj_style)],
         ['', Paragraph(f"Tarikh: {tarikh_hari_ini}", ruj_style)]
     ]
-    # Pelarasan lebar sejajar dengan maklumat hubungi (80 + 232 = 312)
-    rujukan_table = Table(rujukan_table_data, colWidths=[312, 170])
+    # Pelarasan lebar (298) supaya Ruj/Tarikh sejajar dengan titik mula maklumat hubungi (78+220)
+    rujukan_table = Table(rujukan_table_data, colWidths=[298, 183])
     rujukan_table.setStyle(TableStyle([
         ('ALIGN', (1,0), (1,-1), 'LEFT'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -307,7 +306,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             j_count += 1
     if j_count == 1: task_box_data.append([Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatankuasa Ditetapkan</i>", bullet_style)])
 
-    task_table = Table(task_box_data, colWidths=[482])
+    task_table = Table(task_box_data, colWidths=[465])
     task_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F8FAFC')),
         ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
