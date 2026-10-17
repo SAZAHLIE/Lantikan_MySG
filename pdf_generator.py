@@ -37,21 +37,17 @@ class NumberedCanvas(canvas.Canvas):
             self.__dict__.update(state)
             
             # --- 1. KAKI SURAT (FOOTER SPA) UNTUK SEMUA MUKA SURAT ---
-            # Garisan Pemisah Bawah (30mm / 85pt dari bawah, 20mm / 56.7pt dari kiri)
             self.setLineWidth(1.0)
             self.line(56.7, 85.0, A4[0] - 56.7, 85.0)
 
-            # Cogan Kata Sekolah (Di bawah garisan hitam)
             cogan_kata = getattr(self, 'cogan_kata', 'BERBUDAYA BERILMU BERWAWASAN')
             self.setFont("Helvetica-Bold", 8)
             self.drawCentredString(A4[0] / 2.0, 72.0, cogan_kata.upper())
 
-            # Nota Janaan Sistem (Kiri Bawah)
             self.setFont("Helvetica", 6)
             kod = getattr(self, 'kod_sekolah', '')
             self.drawString(56.7, 20, f"Janaan MySG KPM: Sistem Pengurusan & Analisis Beban Kerja ({kod})")
 
-            # Nombor Muka Surat (Tepat di ATAS garisan pemisah 85pt, TIDAK BOLD)
             if self._pageNumber < num_pages:
                 self.setFont("Helvetica", 10)
                 self.drawRightString(A4[0] - 56.7, 95.0, f"...{self._pageNumber + 1}/")
@@ -61,14 +57,12 @@ class NumberedCanvas(canvas.Canvas):
                 ruj = getattr(self, 'no_ruj_format_str', '')
                 tajuk = getattr(self, 'tajuk_surat_str', '')
                 
-                # Koordinat bermula dari Margin Atas
                 self.setFont("Helvetica-Bold", 10)
                 self.drawString(56.7, 803, tajuk)
                 
                 self.setFont("Helvetica", 10)
                 self.drawString(56.7, 788, f"Ruj. Kami: {ruj}")
                 
-                # Garis Pemisah Atas Muka Surat Sambungan
                 self.setLineWidth(1.0)
                 self.line(56.7, 780, A4[0] - 56.7, 780)
             
@@ -148,7 +142,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         if not no_rujukan:
             no_rujukan = f"KP/{kod_sek}/MYSG/{tahun_sesi.split('/')[0]}/01"
             
-    # Parameter Rujukan Bersih (Tanpa tag HTML) untuk dicetak pada Kanvas Muka Surat 2
     no_ruj_format_clean = f"{no_rujukan} (          )"
     tajuk_surat_str = f"LANTIKAN DAN AGIHAN TUGAS BAGI SESI PERSEKOLAHAN TAHUN {tahun_sesi}"
 
@@ -162,8 +155,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
 
     buffer = io.BytesIO()
     
-    # TETAPAN ASAS BASE DOC TEMPLATE
-    # bottomMargin dinaikkan kepada 120.0pt supaya ada 1 baris kosong sebelum nombor muka surat (Y: 95.0)
     doc = BaseDocTemplate(
         buffer,
         pagesize=A4,
@@ -173,7 +164,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         bottomMargin=120.0
     )
 
-    # Frame Muka Surat 1 (Ruang penuh)
     frame_first = Frame(
         doc.leftMargin, 
         doc.bottomMargin, 
@@ -183,7 +173,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0
     )
 
-    # Frame Muka Surat 2+ (Margin atas diturunkan 45pt untuk beri ruang kepada Header Rujukan)
     frame_later = Frame(
         doc.leftMargin, 
         doc.bottomMargin, 
@@ -198,8 +187,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     doc.addPageTemplates([template_first, template_later])
 
     story = []
-    
-    # Arahan agar Muka Surat Seterusnya (Page 2+) menggunakan templat 'Later'
     story.append(NextPageTemplate('Later'))
     
     styles = getSampleStyleSheet()
@@ -207,7 +194,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     bold_body = ParagraphStyle('BoldBody', parent=body_style, fontName='Helvetica-Bold')
     
     # -------------------------------------------------------------
-    # 1. KEPALA SURAT (MUKA SURAT 1 SAHAJA)
+    # 1. KEPALA SURAT (MUKA SURAT 1 SAHAJA - LOCKED)
     # -------------------------------------------------------------
     jata_b64 = ""
     for fname in ["JATA.png", "jata_negara.png", "jata.png", "jata_negara.jpg", "jata.jpg"]:
@@ -296,7 +283,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     ]))
     
     story.append(rujukan_table)
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 14))
 
     # -------------------------------------------------------------
     # 2. PENERIMA & TAJUK SURAT
@@ -306,13 +293,13 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
 
     story.append(Paragraph(f"<b>{nama_staf}</b>", bold_body))
     story.append(Paragraph(f"No. KP: {no_kp}", body_style))
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 14)) # Tepat 1 Baris Kosong
     
     story.append(Paragraph("Tuan / Puan,", body_style))
     story.append(Spacer(1, 14))
 
     story.append(Paragraph(f"<b>{tajuk_surat_str}</b>", ParagraphStyle('TajukP', parent=bold_body, fontSize=11, leading=14)))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 14))
 
     # -------------------------------------------------------------
     # 3. KANDUNGAN BADAN SURAT
@@ -321,14 +308,12 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     p2 = "2. Sukacita dimaklumkan bahawa pihak sekolah melantik tuan/puan untuk memegang jawatan dan melaksanakan amanah seperti butiran di bawah berkuat kuasa dari tarikh surat ini dikeluarkan sehingga ke suatu tarikh yang dimaklumkan kemudian."
     
     story.append(Paragraph(p1, body_style))
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 14))
     story.append(Paragraph(p2, body_style))
     
     # -------------------------------------------------------------
-    # 4. KOTAK AGIHAN TUGAS (DIJAJARKAN KIRI PENUH & BERLANGKAU)
+    # 4. KOTAK AGIHAN TUGAS (DIJAJARKAN KIRI PENUH)
     # -------------------------------------------------------------
-    
-    # Pembersihan teks 'nan' dari Pandas DataFrame
     jawatan_val = str(staf_row.get('Jawatan', '')).replace('nan | ', '').replace('nan', '').strip()
     dtl_h = str(staf_row.get('Detail_H_1', '')).replace('nan', '').strip()
     kod_h = str(staf_row.get('Kod_H_1', '')).replace('nan', '').strip()
@@ -411,21 +396,22 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     p5 = "5. Semoga tuan/puan dapat menjalankan tugas yang diamanahkan dengan komitmen dan akauntabiliti yang tinggi."
     
     story.append(Paragraph(p3, body_style))
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 14))
     story.append(Paragraph(p4, body_style))
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 14))
     story.append(Paragraph(p5, body_style))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 14))
 
     story.append(Paragraph("Sekian, terima kasih.", body_style))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 14))
 
     story.append(Paragraph("<b>\"MALAYSIA MADANI\"</b>", bold_body))
     story.append(Paragraph("<b>\"BERKHIDMAT UNTUK NEGARA\"</b>", bold_body))
+    
+    # RUANGAN TANDATANGAN: Ditetapkan 56pt (bersamaan 4 langkau baris kosong)
     story.append(Spacer(1, 14))
-
     story.append(Paragraph("Saya yang menjalankan amanah,", body_style))
-    story.append(Spacer(1, 35))
+    story.append(Spacer(1, 56))
     
     story.append(Paragraph(f"<b>{nama_gb}</b>", bold_body))
     story.append(Paragraph(f"{gelaran_gb}", body_style))
