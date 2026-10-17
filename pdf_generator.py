@@ -405,13 +405,16 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph("Sekian, terima kasih.", body_style))
     story.append(Spacer(1, 14))
 
-    # COGAN KATA NEGARA - Disatukan dalam satu perenggan tanpa baris kosong
-    slogan_negara = "<b>\"MALAYSIA MADANI\"</b><br/><b>\"BERKHIDMAT UNTUK NEGARA\"</b>"
-    story.append(Paragraph(slogan_negara, bold_body))
+    # COGAN KATA NEGARA - Diasingkan dengan tepat 1 langkau baris
+    story.append(Paragraph("<b>\"MALAYSIA MADANI\"</b>", bold_body))
+    story.append(Spacer(1, 14))
+    story.append(Paragraph("<b>\"BERKHIDMAT UNTUK NEGARA\"</b>", bold_body))
     
     story.append(Spacer(1, 14))
     story.append(Paragraph("Saya yang menjalankan amanah,", body_style))
-    story.append(Spacer(1, 54))
+    
+    # RUANGAN TANDATANGAN: Ditetapkan 42pt (bersamaan 3 langkau baris kosong)
+    story.append(Spacer(1, 42))
     
     story.append(Paragraph(f"<b>{nama_gb}</b>", bold_body))
     story.append(Paragraph(f"{gelaran_gb}", body_style))
