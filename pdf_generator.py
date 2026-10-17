@@ -80,17 +80,11 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story = []
     styles = getSampleStyleSheet()
 
-    # TETAPAN FONT HEADER
-    title_style_1 = ParagraphStyle('HeaderTitle1', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, leading=13, alignment=TA_LEFT)
-    title_style_2 = ParagraphStyle('HeaderTitle2', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, leading=12, alignment=TA_LEFT)
-    
-    sub_title_style = ParagraphStyle('HeaderSubTitle', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=10.5, alignment=TA_LEFT)
-
     body_style = ParagraphStyle('BodyDark', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=TA_JUSTIFY)
     bold_body = ParagraphStyle('BoldBody', parent=body_style, fontName='Helvetica-Bold')
 
     # -------------------------------------------------------------
-    # 1. OBJEK IMEJ JATA NEGARA & LENCANA (PANGGIL DARI LOKAL)
+    # 1. OBJEK IMEJ JATA NEGARA & LENCANA (SAIZ DIKEMAS KINI)
     # -------------------------------------------------------------
     jata_b64 = ""
     for fname in ["jata_negara.png", "jata.png", "jata_negara.jpg", "jata.jpg", "JATA_NEGARA.png", "JATA NEGARA.png"]:
@@ -99,15 +93,18 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             jata_b64 = get_local_image_base64(path)
             break
             
-    jata_img = get_reportlab_image_from_b64(jata_b64, width=60, height=60)
-    col_jata = jata_img if jata_img else Paragraph("<b>MALAYSIA</b>", title_style_1)
+    # Jata Negara dibesarkan (75x75)
+    jata_img = get_reportlab_image_from_b64(jata_b64, width=75, height=75) 
+    col_jata = jata_img if jata_img else Paragraph("<b>MALAYSIA</b>", body_style)
 
     logo_b64 = school_info.get('logo_base64', '')
-    logo_sek_img = get_reportlab_image_from_b64(logo_b64, width=60, height=60)
+    
+    # Lencana Sekolah dikecilkan (55x55) agar Jata lebih menonjol
+    logo_sek_img = get_reportlab_image_from_b64(logo_b64, width=55, height=55) 
     col_logo = logo_sek_img if logo_sek_img else Paragraph("", body_style)
 
     # -------------------------------------------------------------
-    # 2. MAKLUMAT SEKOLAH & ALAMAT
+    # 2. MAKLUMAT SEKOLAH & ALAMAT (JARAK RAPAT)
     # -------------------------------------------------------------
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR')).upper()
     
@@ -126,18 +123,22 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     
     alamat_str = "<br/>".join(alamat_lines) if alamat_lines else "KM 4, JALAN LEILA,<br/>90000 SANDAKAN,<br/>SABAH, MALAYSIA"
 
+    # GABUNGAN: KPM, Sekolah & Alamat disatukan dalam satu perenggan untuk jarak (spacing) yang rapat
+    header_text = (
+        f"<b><font size='11.5'>KEMENTERIAN PENDIDIKAN MALAYSIA</font></b><br/>"
+        f"<b><font size='10.5'>{nama_sekolah}</font></b><br/>"
+        f"<font size='8.5'>{alamat_str}</font>"
+    )
+    header_p = Paragraph(header_text, ParagraphStyle('HeaderCenterText', parent=styles['Normal'], fontName='Helvetica', leading=12.5, alignment=TA_LEFT))
+
+    # -------------------------------------------------------------
+    # 3. MAKLUMAT HUBUNGI
+    # -------------------------------------------------------------
     no_tel = str(school_info.get('no_telefon', '089-612673'))
     no_fax = str(school_info.get('no_faks', '089-612673'))
     emel_rasmi = str(school_info.get('emel_rasmi', 'xba2004@moe.edu.my'))
-    nama_gb = str(school_info.get('nama_gb', 'AHMAD BIN MOHD')).upper()
-    tahun_sesi = str(school_info.get('tahun_sesi', '2027'))
 
-    header_p1 = Paragraph("<b>KEMENTERIAN PENDIDIKAN MALAYSIA</b>", title_style_1)
-    header_p2 = Paragraph(f"<b>{nama_sekolah}</b>", title_style_2)
-    header_p3 = Paragraph(alamat_str, sub_title_style)
-
-    # TETAPAN ALIGNMENT KIRI UNTUK TEL, FAKS, EMEL DENGAN SPACING (&nbsp;) YANG RAPI
-    contact_style = ParagraphStyle('ContactP', parent=sub_title_style, alignment=TA_LEFT)
+    contact_style = ParagraphStyle('ContactP', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, leading=11, alignment=TA_LEFT)
     contact_p = Paragraph(
         f"Tel&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {no_tel}<br/>"
         f"Faks&nbsp;&nbsp;&nbsp;&nbsp;: {no_fax}<br/>"
@@ -146,25 +147,26 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     )
 
     # -------------------------------------------------------------
-    # 3. JADUAL HEADER 4 KOLUM
+    # 4. JADUAL HEADER (KEDUDUKAN & PENJAJARAN DIKEMAS KINI)
     # -------------------------------------------------------------
     header_table_data = [
-        [col_jata, header_p1, contact_p, col_logo],
-        ['', header_p2, '', ''],
-        ['', header_p3, '', '']
+        [col_jata, header_p, contact_p, col_logo]
     ]
 
-    header_table = Table(header_table_data, colWidths=[65, 245, 145, 65])
+    header_table = Table(header_table_data, colWidths=[80, 240, 140, 60])
     header_table.setStyle(TableStyle([
-        ('SPAN', (0,0), (0,2)),
-        ('SPAN', (3,0), (3,2)),
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('VALIGN', (0,0), (0,2), 'MIDDLE'), # Jata center vertikal
-        ('VALIGN', (3,0), (3,2), 'MIDDLE'), # Lencana center vertikal
-        ('ALIGN', (0,0), (0,2), 'CENTER'),
-        ('ALIGN', (3,0), (3,2), 'CENTER'),
+        ('VALIGN', (0,0), (0,0), 'MIDDLE'), # Jata di tengah
+        ('VALIGN', (1,0), (1,0), 'MIDDLE'), # Teks Alamat di tengah
+        ('VALIGN', (2,0), (2,0), 'BOTTOM'), # Maklumat Hubungi dijajarkan ke Bawah (Bottom)
+        ('VALIGN', (3,0), (3,0), 'MIDDLE'), # Lencana di tengah
+        ('ALIGN', (0,0), (0,0), 'LEFT'),
+        ('ALIGN', (1,0), (1,0), 'LEFT'),
+        ('ALIGN', (2,0), (2,0), 'LEFT'),
+        ('ALIGN', (3,0), (3,0), 'RIGHT'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     
     story.append(header_table)
@@ -172,7 +174,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.black, spaceBefore=2, spaceAfter=8))
 
     # -------------------------------------------------------------
-    # 4. RUJUKAN & TARIKH
+    # 5. RUJUKAN & TARIKH
     # -------------------------------------------------------------
     if not no_rujukan:
         kod_sek = str(school_info.get('kod_sekolah', 'SEK'))
@@ -190,7 +192,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Spacer(1, 8))
 
     # -------------------------------------------------------------
-    # 5. PENERIMA SURAT
+    # 6. PENERIMA SURAT
     # -------------------------------------------------------------
     nama_staf = str(staf_row.get('Nama', '')).upper()
     raw_kp = str(staf_row.get('No_KP', '')).strip()
@@ -203,14 +205,14 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Spacer(1, 6))
 
     # -------------------------------------------------------------
-    # 6. TAJUK SURAT
+    # 7. TAJUK SURAT
     # -------------------------------------------------------------
     tajuk_surat = f"<b>LANTIKAN DAN AGIHAN TUGAS BAGI SESI PERSEKOLAHAN TAHUN {tahun_sesi}</b>"
     story.append(Paragraph(tajuk_surat, ParagraphStyle('TajukP', parent=bold_body, fontSize=9.5, leading=12)))
     story.append(Spacer(1, 6))
 
     # -------------------------------------------------------------
-    # 7. KANDUNGAN SURAT
+    # 8. KANDUNGAN SURAT
     # -------------------------------------------------------------
     p1 = "Dengan segala hormatnya perkara di atas adalah dirujuk bersama perkara-perkara berkaitan di bawah Akta Pendidikan 1996, Surat-surat Pekeliling Ikhtisas (SPI), serta arahan dan garis panduan MySG KPM yang berkuat kuasa."
     p2 = "2. Sukacita dimaklumkan bahawa pihak sekolah melantik tuan/puan untuk memegang jawatan dan melaksanakan amanah seperti berikut berkuat kuasa mulai tarikh surat ini dikeluarkan sehingga ke suatu tarikh yang dimaklumkan kemudian:"
@@ -220,7 +222,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Spacer(1, 8))
 
     # -------------------------------------------------------------
-    # 8. KOTAK AGIHAN TUGAS
+    # 9. KOTAK AGIHAN TUGAS
     # -------------------------------------------------------------
     jawatan_val = str(staf_row.get('Jawatan', '')).strip()
     dtl_h = str(staf_row.get('Detail_H_1', '')).strip()
@@ -261,6 +263,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         p_dtl = str(staf_row.get(f"Detail_P_{idx_num}", '')).strip()
 
         if p_kod not in ["nan", "None", ""]:
+            from mysg_core import MYSG_PORTFOLIO_P
             label_p = f"{p_kod} | {MYSG_PORTFOLIO_P[p_kod][0]}" if p_kod in MYSG_PORTFOLIO_P else p_kod
             dtl_str = f": {p_dtl}" if p_dtl and p_dtl not in ["nan", "None", label_p] else ""
             task_box_data.append([Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.2.{p_count}. <b>{label_p}</b>{dtl_str}", body_style)])
@@ -278,6 +281,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         j_dtl = str(staf_row.get(f"Detail_J_{idx_num}", '')).strip()
 
         if j_kod not in ["nan", "None", ""]:
+            from mysg_core import MYSG_JAWATANKUASA_J
             label_j = f"{j_kod} | {MYSG_JAWATANKUASA_J[j_kod][0]}" if j_kod in MYSG_JAWATANKUASA_J else j_kod
             dtl_str = f": {j_dtl}" if j_dtl and j_dtl not in ["nan", "None", label_j] else ""
             task_box_data.append([Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.3.{j_count}. <b>{label_j}</b>{dtl_str}", body_style)])
@@ -299,7 +303,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Spacer(1, 8))
 
     # -------------------------------------------------------------
-    # 9. PENUTUP & TANDATANGAN
+    # 10. PENUTUP & TANDATANGAN
     # -------------------------------------------------------------
     p3 = "3. Sehubungan dengan itu, tuan/puan adalah dinasihatkan untuk merujuk dan memahami tugas serta tanggungjawab yang ditetapkan selaras dengan Garis Panduan Tadbir Urus Sekolah (MySG KPM)."
     story.append(Paragraph(p3, body_style))
