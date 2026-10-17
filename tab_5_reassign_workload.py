@@ -202,7 +202,7 @@ def render_tab_5(school_info):
         btn_save_reassign = st.form_submit_button("💾 Simpan & Kemaskini Penyelarasan Tugas Kakitangan", type="primary", use_container_width=True)
 
         if btn_save_reassign:
-            if pin_pengesahan_3 != "1234":
+            if pin_pengesahan_3 != school_info.get('admin_pin', '1234'):
                 st.error("🔒 PIN Pengesahan salah! Akses ditolak. Hanya pentadbir yang sah dibenarkan merombak tugas.")
             else:
                 # PENUKARAN KEPADA SENARAI DIKSIONARI UNTUK ELAK MENGGANTI LANGSUNG SEL FLOAT64 DATAFRAME
