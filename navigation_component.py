@@ -21,7 +21,7 @@ def go_to_next_step():
 
 def render_navigation_bar(current_step=1, total_steps=3):
     """
-    Menjana bar navigasi berpusat lengkap berserta borang Save & Exit yang stabil.
+    Menjana bar navigasi berpusat lengkap berserta borang Simpan & Keluar yang stabil.
     """
     st.markdown("<br><hr style='border:none; border-top:1px dashed #cbd5e1; margin: 20px 0;'>", unsafe_allow_html=True)
     
@@ -71,10 +71,10 @@ def render_navigation_bar(current_step=1, total_steps=3):
             st.button("Selesai (Halaman Akhir) ✅", disabled=True, use_container_width=True, key="nav_btn_next_disabled")
 
     # -------------------------------------------------------------------
-    # 4. BUTANG SAVE & EXIT (DIRECT EXPORT VAULT)
+    # 4. BUTANG SIMPAN & KELUAR (DIRECT EXPORT VAULT)
     # -------------------------------------------------------------------
     with col_nav4:
-        with st.popover("💾 Save & Exit", use_container_width=True):
+        with st.popover("💾 Simpan & Keluar", use_container_width=True):
             st.markdown("### 🔒 Keluar Dari Sistem")
             st.caption("Pilih kaedah keluar untuk keselamatan data (PDPA):")
 
@@ -113,7 +113,6 @@ def render_navigation_bar(current_step=1, total_steps=3):
                         # 2. PAPARKAN BUTANG MUAT TURUN UTAMA SECARA DIRECT
                         st.success(f"✅ Kata laluan sedia! Sila klik butang muat turun di bawah:")
                         
-                        # Hanya memuat turun fail, TIADA LAGI PEMBERSIHAN MEMORI SERTA-MERTA DI SINI
                         st.download_button(
                             label=f"📥 Muat Turun Fail Vault ({file_name})",
                             data=encrypted_bytes,
@@ -124,7 +123,6 @@ def render_navigation_bar(current_step=1, total_steps=3):
                             key=f"btn_direct_download_vault_{current_step}"
                         )
                         
-                        # PENGGUNA MESTI MENEKAN BUTANG INI SELEPAS SELESAI MUAT TURUN
                         st.info("⚠️ Sila pastikan muat turun selesai sepenuhnya terlebih dahulu. Kemudian klik butang di bawah untuk memadam memori sesi secara selamat.")
                         if st.button("🧹 Selesai Muat Turun & Bersihkan Memori", use_container_width=True, key=f"btn_clear_exit_{current_step}"):
                             st.session_state.clear()
