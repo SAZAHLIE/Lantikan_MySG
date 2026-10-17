@@ -13,8 +13,8 @@ try:
     from mysg_core import SYSTEM_NAME, SYSTEM_VERSION, SYSTEM_RELEASE_DATE
 except ImportError:
     SYSTEM_NAME = "MySG KPM: Sistem Pengurusan & Analisis Beban Kerja"
-    SYSTEM_VERSION = "0.1.0-ALPHA"
-    SYSTEM_RELEASE_DATE = "15 Oktober 2026"
+    SYSTEM_VERSION = "1.0.0"
+    SYSTEM_RELEASE_DATE = "18 Oktober 2026"
 
 def get_logo_s_base64():
     """Mengambil logo S dalam format Base64 untuk dipaparkan dalam HTML."""
@@ -48,7 +48,7 @@ def render_footer():
 <div style="flex: 1; text-align: center; padding: 0 10px;">
 <h4 style="margin: 0 0 5px 0; font-size: 14px; color: #0f172a; font-weight: 800; letter-spacing: -0.2px; line-height: 1.3;">{SYSTEM_NAME}</h4>
 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
-<span style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 12px; letter-spacing: 0.5px; display: inline-block; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);">VERSI PERMULAAN v{SYSTEM_VERSION}</span>
+<span style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 12px; letter-spacing: 0.5px; display: inline-block; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);">VERSI RASMI v{SYSTEM_VERSION}</span>
 <span style="background-color: #d97706; color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 12px;">📅 DIJANA: {SYSTEM_RELEASE_DATE}</span>
 <span style="background-color: #059669; color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 12px;">🔒 ZERO-CLOUD STORAGE (PDPA COMPLIANT)</span>
 </div>
