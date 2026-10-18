@@ -23,31 +23,47 @@ def render_page_3():
     # -------------------------------------------------------------------
     # BANNER HEADER RASMI SEKOLAH (DINAMIK)
     # -------------------------------------------------------------------
-    # Dapatkan maklumat sekolah yang telah diisi oleh pengguna
     info_sekolah = st.session_state.get('school_info', {})
     nama_sekolah_dinamik = info_sekolah.get('nama_sekolah', 'NAMA SEKOLAH BELUM DITETAPKAN')
     
-    # Dapatkan data logo dari pembolehubah sesi atau fail .mysg
-    logo_data = info_sekolah.get('logo_sekolah_url', info_sekolah.get('logo_sekolah', info_sekolah.get('logo', '')))
+    # --- FUNGSI PENCARIAN LOGO PINTAR (SUPER SMART SEARCH) ---
+    logo_data = None
     
-    # Tetapan emoji lalai jika logo tiada
+    # 1. Cari dalam school_info dahulu (Semak pelbagai kemungkinan kata kunci)
+    for key in ['logo_sekolah_url', 'logo_sekolah', 'logo', 'logo_base64', 'jata_sekolah', 'jata', 'school_logo', 'gambar']:
+        if key in info_sekolah and info_sekolah[key]:
+            logo_data = info_sekolah[key]
+            break
+            
+    # 2. Jika tiada, cari terus dalam seluruh memori session_state
+    if not logo_data:
+        for key, val in st.session_state.items():
+            if isinstance(key, str) and ('logo' in key.lower() or 'jata' in key.lower()) and val:
+                logo_data = val
+                break
+
+    # --- PENETAPAN PAPARAN LOGO ---
+    # Emoji lalai jika benar-benar tiada gambar
     logo_html = '<span style="font-size: 28px; vertical-align: middle; margin-right: 10px;">🏫</span>'
     
     if logo_data:
         try:
-            # Jika logo dibaca sebagai format bait mentah (bytes) dari fail .mysg
-            if isinstance(logo_data, bytes):
+            # Jika fail masih dalam bentuk memori fail muat naik Streamlit (UploadedFile)
+            if hasattr(logo_data, 'getvalue'):
+                encoded = base64.b64encode(logo_data.getvalue()).decode()
+                logo_html = f'<img src="data:image/png;base64,{encoded}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+            # Jika data adalah bait mentah (bytes)
+            elif isinstance(logo_data, bytes):
                 encoded = base64.b64encode(logo_data).decode()
                 logo_html = f'<img src="data:image/png;base64,{encoded}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
-            # Jika logo dalam format teks
+            # Jika data adalah teks (URL atau Base64 mentah)
             elif isinstance(logo_data, str):
                 if logo_data.startswith('http') or logo_data.startswith('data:'):
                     logo_html = f'<img src="{logo_data}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
                 else:
                     logo_html = f'<img src="data:image/png;base64,{logo_data}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
-        except Exception as e:
-            # Sekiranya fail gambar rosak, sistem akan kembali guna emoji tanpa ralat
-            pass
+        except Exception:
+            pass # Kekalkan ikon 🏫 jika format gambar rosak
 
     # Paparkan banner dinamik
     st.markdown(f"""
