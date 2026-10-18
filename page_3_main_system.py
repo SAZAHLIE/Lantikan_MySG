@@ -20,9 +20,17 @@ def render_page_3():
     """Membina navigasi Halaman 3 (Tab Utama sahaja, Footer dikendalikan oleh app.py)."""
     
     # -------------------------------------------------------------------
-    # BANNER HEADER RASMI KPM
+    # BANNER HEADER RASMI SEKOLAH (DINAMIK)
     # -------------------------------------------------------------------
-    st.markdown("""
+    # Dapatkan maklumat sekolah yang telah diisi oleh pengguna
+    info_sekolah = st.session_state.get('school_info', {})
+    nama_sekolah_dinamik = info_sekolah.get('nama_sekolah', 'NAMA SEKOLAH BELUM DITETAPKAN')
+    
+    # Semak jika ada logo dimuat naik, jika tiada guna ikon default
+    logo_sekolah = info_sekolah.get('logo_sekolah_url', '🏫') 
+    
+    # Paparkan banner dinamik
+    st.markdown(f"""
     <div style="
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); 
         color: white; 
@@ -31,24 +39,14 @@ def render_page_3():
         margin-bottom: 20px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     ">
-# Dapatkan maklumat sekolah yang telah diisi oleh pengguna
-info_sekolah = st.session_state.get('school_info', {})
-nama_sekolah_dinamik = info_sekolah.get('nama_sekolah', 'NAMA SEKOLAH BELUM DITETAPKAN')
-
-# Semak jika ada logo dimuat naik, jika tiada guna ikon default
-logo_sekolah = info_sekolah.get('logo_sekolah_url', '🏫') 
-
-# Paparkan banner dinamik
-st.markdown(f"""
-    <div style="background-color: #2b6cb0; padding: 20px; border-radius: 10px; color: white;">
-        <p style="font-size: 12px; font-weight: bold; text-transform: uppercase;">{nama_sekolah_dinamik}</p>
-        <h2 style="color: white; margin-top: 5px;">
+        <p style="font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 0px;">{nama_sekolah_dinamik}</p>
+        <h2 style="color: white; margin-top: 5px; margin-bottom: 5px;">
             <img src="{logo_sekolah}" width="30" style="vertical-align: middle; border-radius: 50%;" onerror="this.style.display='none'"> 
             MySG KPM: Sistem Pengurusan & Analisis Beban Kerja
         </h2>
-        <p style="font-size: 12px;">Standard Panduan Pengurusan Sekolah & Agihan Beban Tugas Warga Sekolah</p>
+        <p style="font-size: 12px; margin-bottom: 0px;">Standard Panduan Pengurusan Sekolah & Agihan Beban Tugas Warga Sekolah</p>
     </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     # Inisialisasi Data Sesi Utama Jika Kosong
     if 'staff_df' not in st.session_state:
