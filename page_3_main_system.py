@@ -7,6 +7,7 @@ MODULE: PAGE 3 - MAIN SYSTEM CONTROLLER (BERSIH TANPA DUPLIKASI FOOTER)
 
 import streamlit as st
 import pandas as pd
+import base64
 
 # IMPORT MODULE TAB UTAMA (MENGIKUT NAMA FAIL ASAL PROJEK)
 import tab_1_dashboard
@@ -26,16 +27,28 @@ def render_page_3():
     info_sekolah = st.session_state.get('school_info', {})
     nama_sekolah_dinamik = info_sekolah.get('nama_sekolah', 'NAMA SEKOLAH BELUM DITETAPKAN')
     
-    # Semak pautan logo sekolah
-    logo_url = info_sekolah.get('logo_sekolah_url', '') 
+    # Dapatkan data logo dari pembolehubah sesi atau fail .mysg
+    logo_data = info_sekolah.get('logo_sekolah_url', info_sekolah.get('logo_sekolah', info_sekolah.get('logo', '')))
     
-    # Tentukan cara paparan logo (Sama ada imej sebenar atau ikon lalai)
-    if logo_url and (logo_url.startswith('http') or logo_url.startswith('data:')):
-        logo_html = f'<img src="{logo_url}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: cover; margin-right: 10px;">'
-    else:
-        # Gunakan emoji sebagai ganti jika tiada logo dimuat naik
-        logo_html = '<span style="font-size: 28px; vertical-align: middle; margin-right: 10px;">🏫</span>'
+    # Tetapan emoji lalai jika logo tiada
+    logo_html = '<span style="font-size: 28px; vertical-align: middle; margin-right: 10px;">🏫</span>'
     
+    if logo_data:
+        try:
+            # Jika logo dibaca sebagai format bait mentah (bytes) dari fail .mysg
+            if isinstance(logo_data, bytes):
+                encoded = base64.b64encode(logo_data).decode()
+                logo_html = f'<img src="data:image/png;base64,{encoded}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+            # Jika logo dalam format teks
+            elif isinstance(logo_data, str):
+                if logo_data.startswith('http') or logo_data.startswith('data:'):
+                    logo_html = f'<img src="{logo_data}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+                else:
+                    logo_html = f'<img src="data:image/png;base64,{logo_data}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+        except Exception as e:
+            # Sekiranya fail gambar rosak, sistem akan kembali guna emoji tanpa ralat
+            pass
+
     # Paparkan banner dinamik
     st.markdown(f"""
     <div style="
