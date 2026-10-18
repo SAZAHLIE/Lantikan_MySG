@@ -26,8 +26,15 @@ def render_page_3():
     info_sekolah = st.session_state.get('school_info', {})
     nama_sekolah_dinamik = info_sekolah.get('nama_sekolah', 'NAMA SEKOLAH BELUM DITETAPKAN')
     
-    # Semak jika ada logo dimuat naik, jika tiada guna ikon default
-    logo_sekolah = info_sekolah.get('logo_sekolah_url', '🏫') 
+    # Semak pautan logo sekolah
+    logo_url = info_sekolah.get('logo_sekolah_url', '') 
+    
+    # Tentukan cara paparan logo (Sama ada imej sebenar atau ikon lalai)
+    if logo_url and (logo_url.startswith('http') or logo_url.startswith('data:')):
+        logo_html = f'<img src="{logo_url}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: cover; margin-right: 10px;">'
+    else:
+        # Gunakan emoji sebagai ganti jika tiada logo dimuat naik
+        logo_html = '<span style="font-size: 28px; vertical-align: middle; margin-right: 10px;">🏫</span>'
     
     # Paparkan banner dinamik
     st.markdown(f"""
@@ -40,9 +47,9 @@ def render_page_3():
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     ">
         <p style="font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 0px;">{nama_sekolah_dinamik}</p>
-        <h2 style="color: white; margin-top: 5px; margin-bottom: 5px;">
-            <img src="{logo_sekolah}" width="30" style="vertical-align: middle; border-radius: 50%;" onerror="this.style.display='none'"> 
-            MySG KPM: Sistem Pengurusan & Analisis Beban Kerja
+        <h2 style="color: white; margin-top: 5px; margin-bottom: 5px; display: flex; align-items: center;">
+            {logo_html}
+            <span>MySG KPM: Sistem Pengurusan & Analisis Beban Kerja</span>
         </h2>
         <p style="font-size: 12px; margin-bottom: 0px;">Standard Panduan Pengurusan Sekolah & Agihan Beban Tugas Warga Sekolah</p>
     </div>
