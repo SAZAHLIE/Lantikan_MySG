@@ -42,26 +42,26 @@ def render_page_3():
                 logo_data = val
                 break
 
-    # --- PENETAPAN PAPARAN LOGO ---
+    # --- PENETAPAN PAPARAN LOGO (SAIZ PENUH) ---
     # Emoji lalai jika benar-benar tiada gambar
-    logo_html = '<span style="font-size: 28px; vertical-align: middle; margin-right: 10px;">🏫</span>'
+    logo_html = '<span style="font-size: 35px; vertical-align: middle; margin-right: 15px;">🏫</span>'
     
     if logo_data:
         try:
             # Jika fail masih dalam bentuk memori fail muat naik Streamlit (UploadedFile)
             if hasattr(logo_data, 'getvalue'):
                 encoded = base64.b64encode(logo_data.getvalue()).decode()
-                logo_html = f'<img src="data:image/png;base64,{encoded}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+                logo_html = f'<img src="data:image/png;base64,{encoded}" height="80" style="vertical-align: middle; object-fit: contain; margin-right: 18px;">'
             # Jika data adalah bait mentah (bytes)
             elif isinstance(logo_data, bytes):
                 encoded = base64.b64encode(logo_data).decode()
-                logo_html = f'<img src="data:image/png;base64,{encoded}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+                logo_html = f'<img src="data:image/png;base64,{encoded}" height="80" style="vertical-align: middle; object-fit: contain; margin-right: 18px;">'
             # Jika data adalah teks (URL atau Base64 mentah)
             elif isinstance(logo_data, str):
                 if logo_data.startswith('http') or logo_data.startswith('data:'):
-                    logo_html = f'<img src="{logo_data}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+                    logo_html = f'<img src="{logo_data}" height="80" style="vertical-align: middle; object-fit: contain; margin-right: 18px;">'
                 else:
-                    logo_html = f'<img src="data:image/png;base64,{logo_data}" width="35" height="35" style="vertical-align: middle; border-radius: 50%; object-fit: contain; margin-right: 10px; background-color: white;">'
+                    logo_html = f'<img src="data:image/png;base64,{logo_data}" height="80" style="vertical-align: middle; object-fit: contain; margin-right: 18px;">'
         except Exception:
             pass # Kekalkan ikon 🏫 jika format gambar rosak
 
@@ -78,7 +78,7 @@ def render_page_3():
         <p style="font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 0px;">{nama_sekolah_dinamik}</p>
         <h2 style="color: white; margin-top: 5px; margin-bottom: 5px; display: flex; align-items: center;">
             {logo_html}
-            <span>MySG KPM: Sistem Pengurusan & Analisis Beban Kerja</span>
+            <span style="line-height: 1.2;">MySG KPM: Sistem Pengurusan & Analisis Beban Kerja</span>
         </h2>
         <p style="font-size: 12px; margin-bottom: 0px;">Standard Panduan Pengurusan Sekolah & Agihan Beban Tugas Warga Sekolah</p>
     </div>
