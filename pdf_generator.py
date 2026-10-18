@@ -123,10 +123,11 @@ def format_tarikh_melayu(d):
     return f"{d.day} {bulan[d.month]} {d.year}"
 
 def mask_ic_number(ic_str):
-    if not ic_str or ic_str in ["nan", "None", "-"]: return "-"
-    ic_str = ic_str.replace("-", "").strip()
-    if len(ic_str) == 12: return f"{ic_str[:6]}-{ic_str[6:8]}-XXXX"
-    return "XXXXXX-XX-XXXX"
+    if not ic_str or str(ic_str) in ["nan", "None", "-"]: return "-"
+    ic_str = str(ic_str).replace("-", "").strip()
+    if len(ic_str) == 12: 
+        return f"{ic_str[:6]}-{ic_str[6:8]}-{ic_str[8:]}"
+    return ic_str
 
 def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
