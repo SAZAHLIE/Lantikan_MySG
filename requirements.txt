@@ -7,3 +7,4 @@ Pillow
 xhtml2pdf
 pypdf
 PyPDF2
+xlsxwriter
