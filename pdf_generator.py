@@ -392,7 +392,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     # -------------------------------------------------------------
     # 5. PENUTUP & TANDATANGAN
     # -------------------------------------------------------------
-    p3 = "3. Sehubungan dengan itu, tuan/puan adalah dinasihatkan untuk merujuk dan memahami tugas serta tanggungjawab yang ditetapkan seperti yang dinyatakan dalam MySG KPM, Pekeliling dan SPI serta dokumen yang berkaitan."
+    p3 = "3. Sehubungan dengan itu, tuan/puan adalah dinasihatkan untuk merujuk dan melaksanakan bidang tugas serta tanggungjawab tersebut berpandukan MySG KPM dan rincian kerja di dalam MyPortfolio. Pelaksanaan tugas ini juga hendaklah menepati standard kualiti dan penyediaan eviden seperti yang digariskan dalam SKPM Kualiti@Sekolah (SKPMg2), berserta Surat-surat Pekeliling Ikhtisas (SPI) dan arahan-arahan yang berkuat kuasa."
     p4 = "4. Sebarang kecuaian dan ketidakakuran tuan/puan dalam menjalankan tugas-tugas tersebut, tuan/puan boleh dikenakan Tindakan di bawah Peraturan-peraturan Pegawai Awam (Kelakuan dan Tatatertib) 1993."
     p5 = "5. Semoga tuan/puan dapat menjalankan tugas yang diamanahkan dengan komitmen dan akauntabiliti yang tinggi."
     
