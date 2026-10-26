@@ -89,9 +89,9 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             "PR01 | Guru Kelas: Pembantu Tahun 1C",
             "PR02 | Guru Bertugas Harian: K2 (Sesi Petang)",
             "PR08 | Ketua Panitia: Pendidikan Seni Visual",
-            "PR19 | Guru Penasihat Unit-Unit Kokurikulum: Guru Penasihat BSMM",
-            "PR19 | Guru Penasihat Unit-Unit Kokurikulum: Guru Penasihat Kelab Pencegah Jenayah / PPDa",
-            "PR19 | Guru Penasihat Unit-Unit Kokurikulum: Guru Penasihat Kelab Permainan Dalam"
+            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat BSMM",
+            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat Kelab Pencegah Jenayah / PPDa",
+            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat Kelab Permainan Dalam"
         ]
         for idx, item_str in enumerate(default_p_items, start=1):
             p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {item_str}</div>"
