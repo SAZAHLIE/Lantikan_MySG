@@ -62,19 +62,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             waktu = item.get('waktu', '2')
             pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.{idx}. Mengajar {subjek}, {kelas} ({waktu} Waktu)</div>"
     else:
-        default_pdp_items = [
-            "Pend. Seni Visual, 1B (2 Waktu)",
-            "Pend. Seni Visual, 2B (2 Waktu)",
-            "Pend. Seni Visual, 2C (2 Waktu)",
-            "Sains, 1A (3 Waktu)",
-            "Sains, 1B (3 Waktu)",
-            "Sains, 1C (3 Waktu)",
-            "Sains, 2A (3 Waktu)",
-            "Sains, 2B (3 Waktu)",
-            "Sains, 2C (9 Waktu)"
-        ]
-        for idx, item_str in enumerate(default_pdp_items, start=1):
-            pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.{idx}. Mengajar {item_str}</div>"
+        pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>- Tiada maklumat direkodkan -</div>"
 
     # 2. PORTFOLIO TANPA JAWATAN (2.2.X)
     p_html_list = ""
@@ -85,16 +73,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             perincian_p = item.get('perincian', '-')
             p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {kod_p} | {perincian_p}</div>"
     else:
-        default_p_items = [
-            "PR01 | Guru Kelas: Pembantu Tahun 1C",
-            "PR02 | Guru Bertugas Harian: K2 (Sesi Petang)",
-            "PR08 | Ketua Panitia: Pendidikan Seni Visual",
-            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat BSMM",
-            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat Kelab Pencegah Jenayah / PPDa",
-            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat Kelab Permainan Dalam"
-        ]
-        for idx, item_str in enumerate(default_p_items, start=1):
-            p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {item_str}</div>"
+        p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>- Tiada maklumat direkodkan -</div>"
 
     # 3. JAWATANKUASA (2.3.X)
     j_html_list = ""
@@ -105,15 +84,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             perincian_j = item.get('perincian', '-')
             j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {kod_j} | {perincian_j}</div>"
     else:
-        default_j_items = [
-            "JR01 | JK Pengurusan Sekolah: Penyelaras Bilik PSV",
-            "JR12 | JK Pengurusan Kurikulum: Penyelaras PBD",
-            "JR16 | JK Pengurusan Hal Ehwal Murid (HEM): AJK Unit Kantin",
-            "JR16 | JK Pengurusan Hal Ehwal Murid (HEM): AJK Unit Pengawas",
-            "JR16 | JK Pengurusan Hal Ehwal Murid (HEM): Ketua Unit PIBKS"
-        ]
-        for idx, item_str in enumerate(default_j_items, start=1):
-            j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {item_str}</div>"
+         j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>- Tiada maklumat direkodkan -</div>"
 
     html_content = f"""
     <!DOCTYPE html>
@@ -378,23 +349,10 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             </tr>
             """
     else:
-        default_pdp = [
-            ("Pend. Seni Visual (4A)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (4B)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (4C)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (5B)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (6A)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (6B)", "2 Waktu", 1.0),
-            ("Sains (6A)", "4 Waktu", 2.0),
-            ("Sains (6B)", "4 Waktu", 2.0),
-            ("Sains (6C)", "4 Waktu", 2.0),
-        ]
-        for idx_p, (sbj, wk, jm) in enumerate(default_pdp):
-            bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
-            rows_h_html += f"""
-            <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; {sbj} • <i style="color: #555;">{wk}</i></td>
-                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jm:.1f} jam</td>
+        rows_h_html += f"""
+            <tr style="background-color: #ffffff;">
+                <td style="padding-left: 12px; color: #777;">• &nbsp; <i>Tiada maklumat PdP direkodkan</i></td>
+                <td style="text-align: right; font-weight: bold; color: #2b579a;">0.0 jam</td>
             </tr>
             """
 
@@ -413,20 +371,10 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             </tr>
             """
     else:
-        default_p = [
-            ("PR01 | Guru Kelas", "Pembantu Tahun 5B", 2.0),
-            ("PR08 | Ketua Panitia Mata Pelajaran", "Sains", 2.0),
-            ("PR02 | Guru Bertugas Harian", "K1 (Sesi Pagi)", 1.5),
-            ("PR19 | Guru Penasihat Unit Kokurikulum", "Guru Penasihat Bola Jaring", 1.5),
-            ("PR19 | Guru Penasihat Unit Kokurikulum", "Guru Penasihat PPIM", 1.5),
-            ("PR19 | Guru Penasihat Unit Kokurikulum", "Guru Penasihat Sains Dan Matematik", 1.5),
-        ]
-        for idx_p, (kd, dsc, jm) in enumerate(default_p):
-            bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
-            rows_p_html += f"""
-            <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; <b>{kd}</b> • <i style="color: #555;">{dsc}</i></td>
-                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jm:.1f} jam</td>
+        rows_p_html += f"""
+            <tr style="background-color: #ffffff;">
+                <td style="padding-left: 12px; color: #777;">• &nbsp; <i>Tiada maklumat direkodkan</i></td>
+                <td style="text-align: right; font-weight: bold; color: #2b579a;">0.0 jam</td>
             </tr>
             """
 
@@ -445,20 +393,10 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             </tr>
             """
     else:
-        default_j = [
-            ("JR01 | JK Pengurusan Sekolah", "Penyelaras Bilik Sains", 1.0),
-            ("JR01 | JK Pengurusan Sekolah", "Penyelaras EKSA", 1.0),
-            ("JR01 | JK Pengurusan Sekolah", "PR06", 1.0),
-            ("JR16 | JK Pengurusan Hal Ehwal Murid (HEM)", "AJK Unit Kantin", 1.0),
-            ("JR18 | JK Pengurusan 3K", "AJK Unit Kesihatan", 1.0),
-            ("JR18 | JK Pengurusan 3K", "Ketua Unit Keceriaan & Kebersihan", 1.0),
-        ]
-        for idx_j, (kd, dsc, jm) in enumerate(default_j):
-            bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
-            rows_j_html += f"""
-            <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; <b>{kd}</b> • <i style="color: #555;">{dsc}</i></td>
-                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jm:.1f} jam</td>
+        rows_j_html += f"""
+            <tr style="background-color: #ffffff;">
+                <td style="padding-left: 12px; color: #777;">• &nbsp; <i>Tiada maklumat direkodkan</i></td>
+                <td style="text-align: right; font-weight: bold; color: #2b579a;">0.0 jam</td>
             </tr>
             """
 
