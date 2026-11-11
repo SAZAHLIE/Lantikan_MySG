@@ -62,17 +62,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             waktu = item.get('waktu', '2')
             pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.{idx}. Mengajar {subjek}, {kelas} ({waktu} Waktu)</div>"
     else:
-        default_pdp_items = [
-            "Pend. Seni Visual, 1B (2 Waktu)",
-            "Pend. Seni Visual, 2B (2 Waktu)",
-            "Pend. Seni Visual, 2C (2 Waktu)",
-            "Sains, 1A (3 Waktu)",
-            "Sains, 1B (3 Waktu)",
-            "Sains, 1C (3 Waktu)",
-            "Sains, 2A (3 Waktu)",
-            "Sains, 2B (3 Waktu)",
-            "Sains, 2C (9 Waktu)"
-        ]
+        default_pdp_items = ["Tiada PdP Ditetapkan"]
         for idx, item_str in enumerate(default_pdp_items, start=1):
             pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.{idx}. Mengajar {item_str}</div>"
 
@@ -85,14 +75,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             perincian_p = item.get('perincian', '-')
             p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {kod_p} | {perincian_p}</div>"
     else:
-        default_p_items = [
-            "PR01 | Guru Kelas: Pembantu Tahun 1C",
-            "PR02 | Guru Bertugas Harian: K2 (Sesi Petang)",
-            "PR08 | Ketua Panitia: Pendidikan Seni Visual",
-            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat BSMM",
-            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat Kelab Pencegah Jenayah / PPDa",
-            "PR19 | Guru Penasihat Unit Kokurikulum: Guru Penasihat Kelab Permainan Dalam"
-        ]
+        default_p_items = ["Tiada Portfolio Ditetapkan"]
         for idx, item_str in enumerate(default_p_items, start=1):
             p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {item_str}</div>"
 
@@ -105,13 +88,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             perincian_j = item.get('perincian', '-')
             j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {kod_j} | {perincian_j}</div>"
     else:
-        default_j_items = [
-            "JR01 | JK Pengurusan Sekolah: Penyelaras Bilik PSV",
-            "JR12 | JK Pengurusan Kurikulum: Penyelaras PBD",
-            "JR16 | JK Pengurusan Hal Ehwal Murid (HEM): AJK Unit Kantin",
-            "JR16 | JK Pengurusan Hal Ehwal Murid (HEM): AJK Unit Pengawas",
-            "JR16 | JK Pengurusan Hal Ehwal Murid (HEM): Ketua Unit PIBKS"
-        ]
+        default_j_items = ["Tiada Jawatankuasa Ditetapkan"]
         for idx, item_str in enumerate(default_j_items, start=1):
             j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {item_str}</div>"
 
