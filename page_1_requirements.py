@@ -53,8 +53,8 @@ def generate_106_col_template_df():
         'Jawatan': 'GURU AKADEMIK BIASA',
         'Subjek_1': 'BAHASA MELAYU', 'Kelas_1': '6 BESTARI', 'Waktu_1': 10,
         'Subjek_2': 'SEJARAH', 'Kelas_2': '5 CEKAL', 'Waktu_2': 6,
-        'Kod_P_1': 'P01', 'Detail_P_1': 'GURU KELAS / GURU TINGKATAN',
-        'Kod_J_1': 'J01', 'Detail_J_1': 'AJK PENGURUSAN MAKLUMAT SEKOLAH (JPMS)'
+        'Kod_P_1': 'PR01', 'Detail_P_1': 'GURU KELAS / GURU TINGKATAN',
+        'Kod_J_1': 'JR01', 'Detail_J_1': 'AJK PENGURUSAN MAKLUMAT SEKOLAH (JPMS)'
     })
 
     row2 = {c: '' for c in cols}
@@ -66,8 +66,8 @@ def generate_106_col_template_df():
         'Jawatan': 'GURU PENOLONG',
         'Subjek_1': 'MATEMATIK', 'Kelas_1': '4 USHAWAN', 'Waktu_1': 12,
         'Subjek_2': 'SAINS', 'Kelas_2': '4 USHAWAN', 'Waktu_2': 8,
-        'Kod_P_1': 'P03', 'Detail_P_1': 'GURU SPBT',
-        'Kod_J_1': 'J02', 'Detail_J_1': 'AJK HAL EHWAL MURID (HEM)'
+        'Kod_P_1': 'PR03', 'Detail_P_1': 'GURU SPBT',
+        'Kod_J_1': 'JR02', 'Detail_J_1': 'AJK HAL EHWAL MURID (HEM)'
     })
 
     return pd.DataFrame([row1, row2], columns=cols)
@@ -175,7 +175,7 @@ def render_page_1():
                 <div style="font-size: 24px; margin-bottom: 8px;">🎯</div>
                 <h3 class="card-title">Keseimbangan Saksama</h3>
                 <p class="body-text">
-                    Memastikan agihan Jawatan Berportfolio Hakiki (HR/HM), Jadual PdP, Jawatan Tanpa Portfolio (P01–P15), dan Jawatankuasa (J01–J15) dihitung secara telus.
+                    Memastikan agihan Jawatan Berportfolio Hakiki (HR/HM), Jadual PdP, Jawatan Tanpa Portfolio (PR01-PR15 / PM01-PM15), dan Jawatankuasa (JR01-JR15 / JM01-JM15) dihitung secara telus.
                 </p>
             </div>
             """,
@@ -226,12 +226,12 @@ def render_page_1():
             **💼 Jawatan Berportfolio Hakiki (HR / HM):**
             * Setiap staf memegang **1 Jawatan Hakiki** sahaja (Sekolah Rendah = HR / Sekolah Menengah = HM).
             
-            **📂 Jawatan Tanpa Portfolio (P01–P15):**
+            **📂 Jawatan Tanpa Portfolio (PR01-PR15 / PM01-PM15):**
             * Menyokong 15 butir portfolio (`Kod_P_1`, `Detail_P_1` hingga `Kod_P_15`, `Detail_P_15`).
             """)
         with col_r2:
             st.markdown("""
-            **🏛️ Jawatankuasa Rasmi (J01–J15):**
+            **🏛️ Jawatankuasa Rasmi (JR01-JR15 / JM01-JM15):**
             * Menyokong 15 butir keahlian jawatankuasa (`Kod_J_1`, `Detail_J_1` hingga `Kod_J_15`, `Detail_J_15`).
             
             **📝 Penyelarasan Istilah & Standard:**
