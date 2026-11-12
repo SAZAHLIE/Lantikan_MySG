@@ -58,7 +58,7 @@ def to_clean_int(val):
 def render_tab_5(school_info):
     """Menjana kandungan Tab 5: Penyelarasan Agihan Tugas Kakitangan."""
     st.subheader("⚙️ Penetapan Semula Agihan Tugas & Transisi Sesi Baharu")
-    st.caption("Kemaskini dan selaraskan agihan Subjek PdP, Portfolio Tanpa Jawatan (P), dan Jawatankuasa Sekolah (J) bagi kakitangan sedia ada. PIN Pengesahan diperlukan.")
+    st.caption("Kemaskini dan selaraskan agihan Portfolio Hakiki (H), Subjek PdP, Portfolio Tanpa Jawatan (P), dan Jawatankuasa Sekolah (J). PIN Pengesahan diperlukan.")
 
     raw_df = st.session_state.get('staff_df', pd.DataFrame())
     data_ver = st.session_state.get('data_version', 1)
@@ -68,24 +68,24 @@ def render_tab_5(school_info):
     list_subjek_kpm = SUBJEK_KPM_SM if is_sm else SUBJEK_KPM_SR
     
     # -------------------------------------------------------------------
-    # PEMBINAAN KOD P DAN J DINAMIK (MENGIKUT JENIS SEKOLAH)
+    # PEMBINAAN KOD H, P DAN J DINAMIK (MENGIKUT JENIS SEKOLAH)
     # -------------------------------------------------------------------
+    mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
+    opts_h = [""] + [f"{k} | {v[0]}" for k, v in mapping_h.items()]
+
     prefix_p = "PM" if is_sm else "PR"
     prefix_j = "JM" if is_sm else "JR"
-
-    # Gantikan kod asas P01 -> PR01 atau PM01
     opts_p = [""] + [f"{k.replace('P', prefix_p)} | {v[0]}" for k, v in MYSG_PORTFOLIO_P.items()]
-    # Gantikan kod asas J01 -> JR01 atau JM01
     opts_j = [""] + [f"{k.replace('J', prefix_j)} | {v[0]}" for k, v in MYSG_JAWATANKUASA_J.items()]
 
     if raw_df is None or raw_df.empty or 'Nama' not in raw_df.columns:
         st.warning("⚠️ Tiada data kakitangan ditemui. Sila muat naik CSV di Tab 1 terlebih dahulu.")
         return
 
-    # PASTIKAN LAJUR TEKS BERJENIS 'OBJECT' UNTUK MENGELAKKAN LOSS-SETITEM ERROR PADA CSV ASAL
+    # PASTIKAN LAJUR TEKS BERJENIS 'OBJECT' UNTUK MENGELAKKAN LOSS-SETITEM ERROR
     df_staff = raw_df.copy()
     for col in df_staff.columns:
-        if str(col).startswith(('Subjek_', 'Kelas_', 'Kod_P_', 'Detail_P_', 'Kod_J_', 'Detail_J_')):
+        if str(col).startswith(('Subjek_', 'Kelas_', 'Kod_P_', 'Detail_P_', 'Kod_J_', 'Detail_J_', 'Kod_H_', 'Detail_H_')):
             df_staff[col] = df_staff[col].astype(object)
 
     selected_staf_name = st.selectbox(
@@ -103,7 +103,7 @@ def render_tab_5(school_info):
     with col_info:
         st.markdown("##### 👤 Maklumat Pegawai:")
         st.write(f"• **Nama:** {staf_row.get('Nama', '-')}")
-        st.write(f"• **Jawatan Hakiki:** {staf_row.get('Jawatan', '-')}")
+        st.write(f"• **Jawatan Hakiki (H):** {staf_row.get('Jawatan', '-')}")
         st.write(f"• **Kumpulan:** {staf_row.get('Kumpulan', 'Guru')}")
         st.write(f"• **Gred:** {staf_row.get('Gred', '-')}")
 
@@ -135,11 +135,34 @@ def render_tab_5(school_info):
 
     with st.form(key=f"form_reassign_{staf_index}_{data_ver}", clear_on_submit=False):
 
-        # A. PDP
+        # A. KOD H (HAKIKI) - BAHAGIAN BARU
+        with st.expander(f"💼 A. Portfolio Berjawatan Hakiki (Kod H)", expanded=True):
+            st.caption("Pilih Jawatan Hakiki Utama. Kod HR (Rendah) atau HM (Menengah) dijana secara automatik.")
+            
+            ch1, ch2 = st.columns([2, 2])
+            raw_kh = to_clean_str(staf_row.get('Kod_H_1'))
+            raw_dh = to_clean_str(staf_row.get('Detail_H_1'))
+
+            idx_h = 0
+            if raw_kh:
+                kod_h_only = raw_kh.split('|')[0].strip()
+                for opt_idx, opt_val in enumerate(opts_h):
+                    clean_opt_h = opt_val.split('|')[0].strip().replace('HR', '').replace('HM', '').replace('H', '')
+                    clean_raw_h = kod_h_only.replace('HR', '').replace('HM', '').replace('H', '')
+                    if clean_opt_h == clean_raw_h and clean_opt_h != "":
+                        idx_h = opt_idx
+                        break
+
+            with ch1:
+                h_re_input_kod = st.selectbox("Kod H (Hakiki):", options=opts_h, index=idx_h, key=f"re_kod_h_{staf_index}")
+            with ch2:
+                h_re_input_detail = st.text_input("Perincian Jawatan / Nama Tugas:", value=raw_dh, key=f"re_det_h_{staf_index}")
+
+        # B. PDP
         pdp_re_inputs = {}
         if staf_row.get('Kumpulan') == "Guru":
             max_pdp = st.session_state['re_pdp_batch']
-            with st.expander(f"📖 A. Pengajaran & Pembelajaran (PdP) — (Paparan 1 hingga {max_pdp})", expanded=True):
+            with st.expander(f"📖 B. Pengajaran & Pembelajaran (PdP) — (Paparan 1 hingga {max_pdp})", expanded=True):
                 st.caption("Kemaskini Subjek, Kelas, dan Bilangan Waktu (Nombor Bulat sahaja).")
                 for i in range(1, max_pdp + 1):
                     c1, c2, c3 = st.columns([2, 1.5, 1])
@@ -156,11 +179,11 @@ def render_tab_5(school_info):
                     with c3:
                         pdp_re_inputs[f'Waktu_{i}'] = st.number_input(f"Waktu {i}:", min_value=0, step=1, value=existing_waktu, key=f"re_waktu_{staf_index}_{i}")
 
-        # B. KOD P (MENGGUNAKAN SENARAI DINAMIK opts_p)
+        # C. KOD P
         p_re_inputs = {}
         max_p = st.session_state['re_p_batch']
 
-        with st.expander(f"💼 B. Portfolio Tanpa Jawatan (Kod P) — (Paparan 1 hingga {max_p})", expanded=True):
+        with st.expander(f"📁 C. Portfolio Tanpa Jawatan (Kod P) — (Paparan 1 hingga {max_p})", expanded=True):
             st.caption("Pilih Kod P dan perincian tugas.")
             for i in range(1, max_p + 1):
                 cp1, cp2 = st.columns([2, 2])
@@ -170,10 +193,7 @@ def render_tab_5(school_info):
                 idx_p = 0
                 if raw_kp:
                     kod_only = raw_kp.split('|')[0].strip()
-                    # Sentiasa cuba padankan tanpa mengira ia lama (P) atau baru (PR/PM)
                     for opt_idx, opt_val in enumerate(opts_p):
-                        # Jika kod asal di dalam CSV adalah P01, kita boleh memadankannya dengan PR01 dengan 
-                        # membuang awalan PR/PM atau P semasa perbandingan.
                         clean_opt = opt_val.split('|')[0].strip().replace('PR', '').replace('PM', '').replace('P', '')
                         clean_raw = kod_only.replace('PR', '').replace('PM', '').replace('P', '')
                         if clean_opt == clean_raw and clean_opt != "":
@@ -185,11 +205,11 @@ def render_tab_5(school_info):
                 with cp2:
                     p_re_inputs[f'Detail_P_{i}'] = st.text_input(f"Butiran Detail P_{i}:", value=raw_dp, key=f"re_det_p_{staf_index}_{i}")
 
-        # C. KOD J (MENGGUNAKAN SENARAI DINAMIK opts_j)
+        # D. KOD J 
         j_re_inputs = {}
         max_j = st.session_state['re_j_batch']
 
-        with st.expander(f"🏛️ C. Jawatankuasa Sekolah (Kod J) — (Paparan 1 hingga {max_j})", expanded=True):
+        with st.expander(f"🏛️ D. Jawatankuasa Sekolah (Kod J) — (Paparan 1 hingga {max_j})", expanded=True):
             st.caption("Pilih Kod J dan perincian jawatankuasa.")
             for i in range(1, max_j + 1):
                 cj1, cj2 = st.columns([2, 2])
@@ -224,6 +244,18 @@ def render_tab_5(school_info):
                 df_dict_list = df_staff.to_dict(orient='records')
                 target_dict = df_dict_list[staf_index]
 
+                # --- 1. KEMASKINI KOD H (HAKIKI) & JAWATAN ---
+                kh_val = to_clean_str(h_re_input_kod)
+                dh_val = to_clean_str(h_re_input_detail)
+                target_dict['Kod_H_1'] = kh_val if kh_val else None
+                target_dict['Detail_H_1'] = dh_val if dh_val else None
+                
+                # Segerakkan nama jawatan supaya laporan dan surat lantikan turut berubah
+                if kh_val:
+                    target_dict['Jawatan'] = kh_val
+                    target_dict['Tugas_Hakiki'] = kh_val
+
+                # --- 2. KEMASKINI PDP ---
                 total_waktu_calc = 0
                 if staf_row.get('Kumpulan') == "Guru":
                     for i in range(1, 16):
@@ -244,6 +276,7 @@ def render_tab_5(school_info):
 
                 target_dict['JUMLAH_WAKTU_PDP'] = float(total_waktu_calc)
 
+                # --- 3. KEMASKINI PORTFOLIO P ---
                 for i in range(1, 16):
                     if i <= max_p:
                         kp_val = to_clean_str(p_re_inputs.get(f'Kod_P_{i}'))
@@ -255,6 +288,7 @@ def render_tab_5(school_info):
                     target_dict[f'Kod_P_{i}'] = kp_val if kp_val else None
                     target_dict[f'Detail_P_{i}'] = dp_val if dp_val else None
 
+                # --- 4. KEMASKINI JAWATANKUASA J ---
                 for i in range(1, 16):
                     if i <= max_j:
                         kj_val = to_clean_str(j_re_inputs.get(f'Kod_J_{i}'))
@@ -266,6 +300,7 @@ def render_tab_5(school_info):
                     target_dict[f'Kod_J_{i}'] = kj_val if kj_val else None
                     target_dict[f'Detail_J_{i}'] = dj_val if dj_val else None
 
+                # --- 5. SIMPAN DAN KIRA SEMULA ---
                 try:
                     df_updated_new = pd.DataFrame(df_dict_list)
                     df_recalculated = calculate_workload_df(df_updated_new, jenis_sek)
