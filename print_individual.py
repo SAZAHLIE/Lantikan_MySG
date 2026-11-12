@@ -23,6 +23,59 @@ def get_malay_official_date():
     now = datetime.now()
     return f"{now.day} {bulan_dict[now.month]} {now.year}"
 
+# -------------------------------------------------------------------
+# HELPER FUNCTION: EKSTRAK DATA TERUS DARI LAJUR CSV JIKA ARRAY TIADA
+# -------------------------------------------------------------------
+def extract_pdp_from_row(staf_row):
+    """Menyemak dan membina senarai PdP terus dari lajur CSV Subjek_1 hingga Subjek_15"""
+    pdp_list = staf_row.get('SENARAI_DETAIL_PDP', [])
+    if isinstance(pdp_list, list) and len(pdp_list) > 0:
+        return pdp_list
+    
+    # Jika tiada, bina dari lajur CSV
+    new_list = []
+    for i in range(1, 16):
+        subjek = staf_row.get(f'Subjek_{i}')
+        if pd.notna(subjek) and str(subjek).strip() != '' and str(subjek).strip() != '0':
+            kelas = staf_row.get(f'Kelas_{i}', '-')
+            waktu = staf_row.get(f'Waktu_{i}', '2')
+            new_list.append({'subjek': str(subjek).strip(), 'kelas': str(kelas).strip(), 'waktu': str(waktu).strip()})
+    return new_list
+
+def extract_portfolio_from_row(staf_row):
+    """Menyemak dan membina senarai Portfolio (P) terus dari lajur Kod_P_1 hingga Kod_P_15"""
+    p_list = staf_row.get('SENARAI_DETAIL_PORTFOLIO_P', [])
+    if isinstance(p_list, list) and len(p_list) > 0:
+        return p_list
+    
+    new_list = []
+    for i in range(1, 16):
+        kod = staf_row.get(f'Kod_P_{i}')
+        if pd.notna(kod) and str(kod).strip() != '' and str(kod).strip() != '0':
+            perincian = staf_row.get(f'Detail_P_{i}', '-')
+            
+            # Pengiraan berat jam portfolio (P) asas
+            jam_val = 1.5 
+            if 'PR01' in str(kod) or 'PR08' in str(kod): jam_val = 2.0
+            
+            new_list.append({'kod': str(kod).strip(), 'perincian': str(perincian).strip(), 'jam': jam_val})
+    return new_list
+
+def extract_jk_from_row(staf_row):
+    """Menyemak dan membina senarai Jawatankuasa (J) terus dari lajur Kod_J_1 hingga Kod_J_15"""
+    j_list = staf_row.get('SENARAI_DETAIL_JAWATANKUASA', [])
+    if isinstance(j_list, list) and len(j_list) > 0:
+        return j_list
+    
+    new_list = []
+    for i in range(1, 16):
+        kod = staf_row.get(f'Kod_J_{i}')
+        if pd.notna(kod) and str(kod).strip() != '' and str(kod).strip() != '0':
+            perincian = staf_row.get(f'Detail_J_{i}', '-')
+            new_list.append({'kod': str(kod).strip(), 'perincian': str(perincian).strip(), 'jam': 1.0})
+    return new_list
+
+
 def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     """Menjana HTML Surat Lantikan Tugas Rasmi."""
     if not isinstance(school_info, dict):
@@ -52,45 +105,39 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     tarikh_rasmi = get_malay_official_date()
     jawatan_hakiki = str(staf_row.get('Tugas_Hakiki', staf_row.get('Jawatan', 'HR24 | PEMBANTU TADBIR (P/O)'))).strip()
 
-    # 1. PDP LIST (2.1.X)
+    # 1. PDP LIST (2.1.X) (DIKEMASKINI DENGAN HELPER)
     pdp_html_list = ""
-    pdp_list = staf_row.get('SENARAI_DETAIL_PDP', [])
-    if isinstance(pdp_list, list) and len(pdp_list) > 0:
+    pdp_list = extract_pdp_from_row(staf_row)
+    if len(pdp_list) > 0:
         for idx, item in enumerate(pdp_list, start=1):
             subjek = item.get('subjek', '-')
             kelas = item.get('kelas', '-')
             waktu = item.get('waktu', '2')
             pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.{idx}. Mengajar {subjek}, {kelas} ({waktu} Waktu)</div>"
     else:
-        default_pdp_items = ["Tiada PdP Ditetapkan"]
-        for idx, item_str in enumerate(default_pdp_items, start=1):
-            pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.{idx}. Mengajar {item_str}</div>"
+        pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.1. Tiada Rekod Pengajaran (PdP)</div>"
 
-    # 2. PORTFOLIO TANPA JAWATAN (2.2.X)
+    # 2. PORTFOLIO TANPA JAWATAN (2.2.X) (DIKEMASKINI DENGAN HELPER)
     p_html_list = ""
-    p_list = staf_row.get('SENARAI_DETAIL_PORTFOLIO_P', [])
-    if isinstance(p_list, list) and len(p_list) > 0:
+    p_list = extract_portfolio_from_row(staf_row)
+    if len(p_list) > 0:
         for idx, item in enumerate(p_list, start=1):
             kod_p = item.get('kod', 'P')
             perincian_p = item.get('perincian', '-')
             p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {kod_p} | {perincian_p}</div>"
     else:
-        default_p_items = ["Tiada Portfolio Ditetapkan"]
-        for idx, item_str in enumerate(default_p_items, start=1):
-            p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {item_str}</div>"
+        p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.1. Tiada Portfolio Ditetapkan</div>"
 
-    # 3. JAWATANKUASA (2.3.X)
+    # 3. JAWATANKUASA (2.3.X) (DIKEMASKINI DENGAN HELPER)
     j_html_list = ""
-    j_list = staf_row.get('SENARAI_DETAIL_JAWATANKUASA', [])
-    if isinstance(j_list, list) and len(j_list) > 0:
+    j_list = extract_jk_from_row(staf_row)
+    if len(j_list) > 0:
         for idx, item in enumerate(j_list, start=1):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
             j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {kod_j} | {perincian_j}</div>"
     else:
-        default_j_items = ["Tiada Jawatankuasa Ditetapkan"]
-        for idx, item_str in enumerate(default_j_items, start=1):
-            j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {item_str}</div>"
+        j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.1. Tiada Jawatankuasa Ditetapkan</div>"
 
     html_content = f"""
     <!DOCTYPE html>
@@ -340,13 +387,18 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     </tr>
     """
     
-    pdp_list = staf_row.get('SENARAI_DETAIL_PDP', [])
-    if isinstance(pdp_list, list) and len(pdp_list) > 0:
+    # KEMASKINI PENGEKSTRAKAN DATA PDP MENGGUNAKAN HELPER
+    pdp_list = extract_pdp_from_row(staf_row)
+    if len(pdp_list) > 0:
         for idx_p, item in enumerate(pdp_list):
             subjek = item.get('subjek', '-')
             kelas = item.get('kelas', '-')
             waktu = item.get('waktu', '2')
-            jam_val = round(float(waktu) * 0.5, 1)
+            try: 
+                jam_val = round(float(waktu) * 0.5, 1)
+            except: 
+                jam_val = 0.0
+                
             bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
             rows_h_html += f"""
             <tr style="background-color: {bg_color};">
@@ -355,29 +407,17 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             </tr>
             """
     else:
-        default_pdp = [
-            ("Pend. Seni Visual (4A)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (4B)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (4C)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (5B)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (6A)", "2 Waktu", 1.0),
-            ("Pend. Seni Visual (6B)", "2 Waktu", 1.0),
-            ("Sains (6A)", "4 Waktu", 2.0),
-            ("Sains (6B)", "4 Waktu", 2.0),
-            ("Sains (6C)", "4 Waktu", 2.0),
-        ]
-        for idx_p, (sbj, wk, jm) in enumerate(default_pdp):
-            bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
-            rows_h_html += f"""
-            <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; {sbj} • <i style="color: #555;">{wk}</i></td>
-                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jm:.1f} jam</td>
-            </tr>
-            """
+        rows_h_html += f"""
+        <tr style="background-color: #ffffff;">
+            <td style="padding-left: 12px; color: #888;">• &nbsp; <i>Tiada Rekod Pengajaran (PdP)</i></td>
+            <td style="text-align: right; font-weight: bold; color: #888;">0.0 jam</td>
+        </tr>
+        """
 
+    # KEMASKINI PENGEKSTRAKAN DATA PORTFOLIO MENGGUNAKAN HELPER
     rows_p_html = ""
-    p_list = staf_row.get('SENARAI_DETAIL_PORTFOLIO_P', [])
-    if isinstance(p_list, list) and len(p_list) > 0:
+    p_list = extract_portfolio_from_row(staf_row)
+    if len(p_list) > 0:
         for idx_p, item in enumerate(p_list):
             kod_p = item.get('kod', 'P')
             perincian_p = item.get('perincian', '-')
@@ -390,26 +430,17 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             </tr>
             """
     else:
-        default_p = [
-            ("PR01 | Guru Kelas", "Pembantu Tahun 5B", 2.0),
-            ("PR08 | Ketua Panitia Mata Pelajaran", "Sains", 2.0),
-            ("PR02 | Guru Bertugas Harian", "K1 (Sesi Pagi)", 1.5),
-            ("PR19 | Guru Penasihat Unit Kokurikulum", "Guru Penasihat Bola Jaring", 1.5),
-            ("PR19 | Guru Penasihat Unit Kokurikulum", "Guru Penasihat PPIM", 1.5),
-            ("PR19 | Guru Penasihat Unit Kokurikulum", "Guru Penasihat Sains Dan Matematik", 1.5),
-        ]
-        for idx_p, (kd, dsc, jm) in enumerate(default_p):
-            bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
-            rows_p_html += f"""
-            <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; <b>{kd}</b> • <i style="color: #555;">{dsc}</i></td>
-                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jm:.1f} jam</td>
-            </tr>
-            """
+        rows_p_html += f"""
+        <tr style="background-color: #ffffff;">
+            <td style="padding-left: 12px; color: #888;">• &nbsp; <i>Tiada Portfolio (P) Ditetapkan</i></td>
+            <td style="text-align: right; font-weight: bold; color: #888;">0.0 jam</td>
+        </tr>
+        """
 
+    # KEMASKINI PENGEKSTRAKAN DATA JAWATANKUASA MENGGUNAKAN HELPER
     rows_j_html = ""
-    j_list = staf_row.get('SENARAI_DETAIL_JAWATANKUASA', [])
-    if isinstance(j_list, list) and len(j_list) > 0:
+    j_list = extract_jk_from_row(staf_row)
+    if len(j_list) > 0:
         for idx_j, item in enumerate(j_list):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
@@ -422,22 +453,12 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             </tr>
             """
     else:
-        default_j = [
-            ("JR01 | JK Pengurusan Sekolah", "Penyelaras Bilik Sains", 1.0),
-            ("JR01 | JK Pengurusan Sekolah", "Penyelaras EKSA", 1.0),
-            ("JR01 | JK Pengurusan Sekolah", "PR06", 1.0),
-            ("JR16 | JK Pengurusan Hal Ehwal Murid (HEM)", "AJK Unit Kantin", 1.0),
-            ("JR18 | JK Pengurusan 3K", "AJK Unit Kesihatan", 1.0),
-            ("JR18 | JK Pengurusan 3K", "Ketua Unit Keceriaan & Kebersihan", 1.0),
-        ]
-        for idx_j, (kd, dsc, jm) in enumerate(default_j):
-            bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
-            rows_j_html += f"""
-            <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; <b>{kd}</b> • <i style="color: #555;">{dsc}</i></td>
-                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jm:.1f} jam</td>
-            </tr>
-            """
+        rows_j_html += f"""
+        <tr style="background-color: #ffffff;">
+            <td style="padding-left: 12px; color: #888;">• &nbsp; <i>Tiada Jawatankuasa (J) Ditetapkan</i></td>
+            <td style="text-align: right; font-weight: bold; color: #888;">0.0 jam</td>
+        </tr>
+        """
 
     html_content = f"""
     <!DOCTYPE html>
