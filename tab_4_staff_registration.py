@@ -51,6 +51,16 @@ def render_tab_4(school_info):
 
     # Tetapan pilihan subjek mengikut peringkat sekolah
     list_subjek_kpm = SUBJEK_KPM_SM if is_sm else SUBJEK_KPM_SR
+    
+    # -------------------------------------------------------------------
+    # PEMBINAAN KOD P DAN J DINAMIK (MENGIKUT JENIS SEKOLAH)
+    # -------------------------------------------------------------------
+    prefix_p = "PM" if is_sm else "PR"
+    prefix_j = "JM" if is_sm else "JR"
+
+    # Menjana senarai dropdown dinamik
+    opts_p = [""] + [f"{k.replace('P', prefix_p)} | {v[0]}" for k, v in MYSG_PORTFOLIO_P.items()]
+    opts_j = [""] + [f"{k.replace('J', prefix_j)} | {v[0]}" for k, v in MYSG_JAWATANKUASA_J.items()]
 
     if 'pdp_batch_count' not in st.session_state:
         st.session_state['pdp_batch_count'] = 5
@@ -118,12 +128,12 @@ def render_tab_4(school_info):
             # SEKSYEN 3: PORTFOLIO TANPA JAWATAN
             p_inputs = {}
             max_p = st.session_state['p_batch_count']
-            opts_p = [""] + [f"{k} | {v[0]}" for k, v in MYSG_PORTFOLIO_P.items()]
             with st.expander(f"💼 3. Perincian Portfolio Tanpa Jawatan (Kod P) — (Paparan 1 hingga {max_p})", expanded=False):
                 st.caption("Pilih Kod P dan masukkan butiran terperinci (Detail P) sekiranya ada.")
                 for i in range(1, max_p + 1):
                     cp1, cp2 = st.columns([2, 2])
                     with cp1:
+                        # MENGGUNAKAN opts_p YANG DINAMIK
                         p_inputs[f'Kod_P_{i}'] = st.selectbox(f"Kod P_{i}:", options=opts_p, key=f"dyn_kod_p_{i}")
                     with cp2:
                         p_inputs[f'Detail_P_{i}'] = st.text_input(f"Butiran Detail P_{i}:", key=f"dyn_det_p_{i}")
@@ -131,12 +141,12 @@ def render_tab_4(school_info):
             # SEKSYEN 4: JAWATANKUASA SEKOLAH
             j_inputs = {}
             max_j = st.session_state['j_batch_count']
-            opts_j = [""] + [f"{k} | {v[0]}" for k, v in MYSG_JAWATANKUASA_J.items()]
             with st.expander(f"🏛️ 4. Perincian Jawatankuasa Sekolah (Kod J) — (Paparan 1 hingga {max_j})", expanded=False):
                 st.caption("Pilih Kod J dan masukkan butiran terperinci (Detail J) sekiranya ada.")
                 for i in range(1, max_j + 1):
                     cj1, cj2 = st.columns([2, 2])
                     with cj1:
+                        # MENGGUNAKAN opts_j YANG DINAMIK
                         j_inputs[f'Kod_J_{i}'] = st.selectbox(f"Kod J_{i}:", options=opts_j, key=f"dyn_kod_j_{i}")
                     with cj2:
                         j_inputs[f'Detail_J_{i}'] = st.text_input(f"Butiran Detail J_{i}:", key=f"dyn_det_j_{i}")
