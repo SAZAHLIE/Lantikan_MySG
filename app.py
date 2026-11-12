@@ -1,4 +1,3 @@
-
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
@@ -15,6 +14,54 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# -------------------------------------------------------------------
+# [BARU] SUNTIKAN CSS UNTUK NAIK TARAF UI (MESRA PENGGUNA)
+# -------------------------------------------------------------------
+st.markdown("""
+<style>
+    /* 1. SKALA FONT ASAS: Besarkan teks biasa untuk mudah dibaca */
+    html, body, [class*="css"]  {
+        font-size: 16px !important; 
+    }
+
+    /* 2. TAJUK (HEADERS): Lebih jelas dan berhierarki */
+    h1 { font-size: 2.2rem !important; font-weight: 700 !important; }
+    h2 { font-size: 1.8rem !important; font-weight: 600 !important; }
+    h3 { font-size: 1.5rem !important; }
+
+    /* 3. BUTANG TINDAKAN (CTA): Lebih besar, tebal, dan mudah diklik */
+    .stButton > button {
+        min-height: 50px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Efek hover pada butang supaya lebih interaktif */
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-color: #ff4b4b !important;
+        color: #ff4b4b !important;
+    }
+
+    /* 4. RUANG INPUT (Borang/Fail): Ketinggian ditambah untuk keselesaan */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > div,
+    .stFileUploader {
+        font-size: 15px !important;
+        padding: 10px !important;
+    }
+
+    /* 5. RUANG BERNAFAS (Padding): Jarakkan elemen supaya tidak padat */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1200px !important; /* Hadkan lebar maksimum supaya kemas di skrin besar */
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------
 # SEKATAN KLIK KANAN & PINTASAN PEMBANGUN (PENYUNTIKAN PARENT WINDOW)
