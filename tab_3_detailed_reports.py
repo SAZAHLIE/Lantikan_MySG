@@ -76,78 +76,86 @@ def render_tab_3(school_info):
         df_summary_comp = pd.DataFrame(summary_comp_data)
 
         # BAHAGIAN 1: RINGKASAN PERBANDINGAN KUMPULAN
-        col_t3_title, col_t3_print = st.columns([2.5, 1.5])
-        with col_t3_title:
-            st.markdown("#### 1. Ringkasan Perbandingan Purata Beban Kerja Kumpulan")
-        with col_t3_print:
-            html_detail_comp = generate_detailed_comparison_html(df_display, "LAPORAN PERINCIAN BANDINGAN BEBAN TUGAS", school_info, st.session_state)
-            st.download_button(
-                label="🖨️ Cetak Laporan Bandingan Kumpulan",
-                data=html_detail_comp,
-                file_name="Laporan_Perincian_Bandingan_Beban_Tugas.html",
-                mime="text/html",
-                type="primary",
-                use_container_width=True,
-                key=f"btn_print_detail_comp_{data_ver}"
-            )
+        st.markdown("#### 1. Ringkasan Perbandingan Purata Beban Kerja Kumpulan")
+        
+        # BUNGKUSAN KAD UNTUK BAHAGIAN 1 (UI LEBIH KEMAS)
+        with st.container(border=True):
+            col_btn_kanan, col_kosong = st.columns([3, 1]) # Penyesuaian ruang
+            with col_btn_kanan:
+                html_detail_comp = generate_detailed_comparison_html(df_display, "LAPORAN PERINCIAN BANDINGAN BEBAN TUGAS", school_info, st.session_state)
+                st.download_button(
+                    label="🖨️ Cetak Laporan Bandingan Kumpulan",
+                    data=html_detail_comp,
+                    file_name="Laporan_Perincian_Bandingan_Beban_Tugas.html",
+                    mime="text/html",
+                    type="primary",
+                    key=f"btn_print_detail_comp_{data_ver}"
+                )
+            st.dataframe(df_summary_comp, use_container_width=True, hide_index=True, key=f"tbl_tab3_comp_{data_ver}")
 
-        st.dataframe(df_summary_comp, use_container_width=True, key=f"tbl_tab3_comp_{data_ver}")
-
-        st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
+        st.write("") # Ruang bernafas antara kad
 
         # BAHAGIAN 2: CARIAN & ANALISIS INDIVIDU
         st.markdown("#### 2. Carian & Analisis Perincian Beban Kerja Individu")
-        col_search, col_ind_btn = st.columns([2.5, 1.5])
+        
+        # BUNGKUSAN KAD UNTUK BAHAGIAN 2
+        with st.container(border=True):
+            col_search, col_ind_btn = st.columns([2.5, 1.5])
 
-        with col_search:
-            selected_staf_ind = st.selectbox(
-                "Pilih Kakitangan untuk Memanggil Data Perincian:",
-                options=df_display['Nama'].tolist(),
-                key="select_ind_report_staf"
-            )
+            with col_search:
+                selected_staf_ind = st.selectbox(
+                    "🔍 Pilih Kakitangan untuk Memanggil Data Perincian:",
+                    options=df_display['Nama'].tolist(),
+                    key="select_ind_report_staf"
+                )
 
-        staf_ind_row = df_display[df_display['Nama'] == selected_staf_ind].iloc[0]
-        kump_staf = staf_ind_row.get('Kumpulan', 'Guru')
-        beban_ind = round(staf_ind_row.get('Jumlah_Jam_Beban', 0.0), 1)
+            staf_ind_row = df_display[df_display['Nama'] == selected_staf_ind].iloc[0]
+            kump_staf = staf_ind_row.get('Kumpulan', 'Guru')
+            beban_ind = round(staf_ind_row.get('Jumlah_Jam_Beban', 0.0), 1)
 
-        purata_kump = beban_guru if kump_staf == 'Guru' else beban_akp
-        diff_jam = round(beban_ind - purata_kump, 1)
+            purata_kump = beban_guru if kump_staf == 'Guru' else beban_akp
+            diff_jam = round(beban_ind - purata_kump, 1)
 
-        with col_ind_btn:
-            st.markdown("<br>", unsafe_allow_html=True)
+            with col_ind_btn:
+                st.markdown("<br>", unsafe_allow_html=True) # Kekal untuk tolak butang ke bawah selari dengan carian
+                
+                html_ind = generate_individual_detailed_report_html(
+                    staf_ind_row, 
+                    school_info, 
+                    df_display
+                )
+                clean_ind_name = str(selected_staf_ind).replace(" ", "_").replace("/", "_")
+                
+                # EJAAN DIBETULKAN DARI "Bandaingan" -> "Bandingan"
+                st.download_button(
+                    label="🖨️ Cetak Laporan Bandingan Individu",
+                    data=html_ind,
+                    file_name=f"Laporan_Individu_{clean_ind_name}.html",
+                    mime="text/html",
+                    type="primary",
+                    use_container_width=True,
+                    key=f"btn_print_bandingan_indiv_{clean_ind_name}_{data_ver}"
+                )
             
-            # MEMANGGIL LAPORAN INDIVIDU A4 PORTRAIT BAHARU
-            html_ind = generate_individual_detailed_report_html(
-                staf_ind_row, 
-                school_info, 
-                df_display
-            )
+            st.divider() # Garis halus pembahagi dalam kad
             
-            clean_ind_name = str(selected_staf_ind).replace(" ", "_").replace("/", "_")
+            # Paparan Kad Metrik Bandingan Individu vs Kumpulan
+            m_c1, m_c2, m_c3, m_c4 = st.columns(4)
+            m_c1.metric("Pegawai Dipilih", selected_staf_ind.split()[0])
+            m_c2.metric("Jumlah Beban Individu", f"{beban_ind} Jam")
+            m_c3.metric(f"Purata ({'Guru' if kump_staf == 'Guru' else 'AKP'})", f"{purata_kump} Jam")
             
-            # KEMASKINI PENAMAAN BUTANG: "Cetak Laporan Bandaingan Individu"
-            st.download_button(
-                label="🖨️ Cetak Laporan Bandaingan Individu",
-                data=html_ind,
-                file_name=f"Laporan_Individu_{clean_ind_name}.html",
-                mime="text/html",
-                type="primary",
-                use_container_width=True,
-                key=f"btn_print_bandaingan_indiv_{clean_ind_name}_{data_ver}"
-            )
+            # Delta color logic: hijau jika dalam purata (+- 5 jam), merah jika lebih/kurang sangat
+            m_c4.metric("Perbezaan vs Purata", f"{'+' if diff_jam>=0 else ''}{diff_jam} Jam", delta_color="normal" if abs(diff_jam)<=5 else "inverse")
 
-        # Paparan Kad Bandingan Individu vs Kumpulan
-        m_c1, m_c2, m_c3, m_c4 = st.columns(4)
-        m_c1.metric("Pegawai Dipilih", selected_staf_ind.split()[0])
-        m_c2.metric("Jumlah Beban Individu", f"{beban_ind} Jam")
-        m_c3.metric(f"Purata Kumpulan ({kump_staf})", f"{purata_kump} Jam")
-        m_c4.metric("Perbezaan vs Purata", f"{'+' if diff_jam>=0 else ''}{diff_jam} Jam", delta_color="normal" if abs(diff_jam)<=5 else "inverse")
-
-        st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
+        st.write("") # Ruang bernafas
+        
+        # BAHAGIAN 3: PERINCIAN KESELURUHAN
         st.markdown(f"#### 3. Perincian Individu Agihan Beban Tugas Kakitangan ({len(df_display)} Rekod)")
-
-        cols_detailed_show = ['Nama', 'Kumpulan', 'Jawatan', 'Waktu_PdP', 'Jam_PdP', 'Jam_Portfolio', 'Jam_Jawatankuasa', 'Jumlah_Jam_Beban', 'Status_Agihan']
-        st.dataframe(df_display[[c for c in cols_detailed_show if c in df_display.columns]], use_container_width=True, key=f"tbl_tab3_detailed_{data_ver}")
+        
+        with st.container(border=True):
+            cols_detailed_show = ['Nama', 'Kumpulan', 'Jawatan', 'Waktu_PdP', 'Jam_PdP', 'Jam_Portfolio', 'Jam_Jawatankuasa', 'Jumlah_Jam_Beban', 'Status_Agihan']
+            st.dataframe(df_display[[c for c in cols_detailed_show if c in df_display.columns]], use_container_width=True, hide_index=True, key=f"tbl_tab3_detailed_{data_ver}")
 
     else:
-        st.warning("⚠️ Tiada data kakitangan ditemui. Sila muat naik CSV di Tab 1 atau buka Vault Terenkripsi di Halaman Utama.")
+        st.info("👋 Sila muat naik fail data sekolah (CSV) atau buka Vault Terenkripsi di Halaman Utama terlebih dahulu untuk melihat analisis.")
