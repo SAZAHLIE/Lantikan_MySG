@@ -66,6 +66,17 @@ def render_tab_5(school_info):
     is_sm = "Menengah" in str(jenis_sek)
 
     list_subjek_kpm = SUBJEK_KPM_SM if is_sm else SUBJEK_KPM_SR
+    
+    # -------------------------------------------------------------------
+    # PEMBINAAN KOD P DAN J DINAMIK (MENGIKUT JENIS SEKOLAH)
+    # -------------------------------------------------------------------
+    prefix_p = "PM" if is_sm else "PR"
+    prefix_j = "JM" if is_sm else "JR"
+
+    # Gantikan kod asas P01 -> PR01 atau PM01
+    opts_p = [""] + [f"{k.replace('P', prefix_p)} | {v[0]}" for k, v in MYSG_PORTFOLIO_P.items()]
+    # Gantikan kod asas J01 -> JR01 atau JM01
+    opts_j = [""] + [f"{k.replace('J', prefix_j)} | {v[0]}" for k, v in MYSG_JAWATANKUASA_J.items()]
 
     if raw_df is None or raw_df.empty or 'Nama' not in raw_df.columns:
         st.warning("⚠️ Tiada data kakitangan ditemui. Sila muat naik CSV di Tab 1 terlebih dahulu.")
@@ -145,10 +156,9 @@ def render_tab_5(school_info):
                     with c3:
                         pdp_re_inputs[f'Waktu_{i}'] = st.number_input(f"Waktu {i}:", min_value=0, step=1, value=existing_waktu, key=f"re_waktu_{staf_index}_{i}")
 
-        # B. KOD P
+        # B. KOD P (MENGGUNAKAN SENARAI DINAMIK opts_p)
         p_re_inputs = {}
         max_p = st.session_state['re_p_batch']
-        opts_p = [""] + [f"{k} | {v[0]}" for k, v in MYSG_PORTFOLIO_P.items()]
 
         with st.expander(f"💼 B. Portfolio Tanpa Jawatan (Kod P) — (Paparan 1 hingga {max_p})", expanded=True):
             st.caption("Pilih Kod P dan perincian tugas.")
@@ -160,8 +170,13 @@ def render_tab_5(school_info):
                 idx_p = 0
                 if raw_kp:
                     kod_only = raw_kp.split('|')[0].strip()
+                    # Sentiasa cuba padankan tanpa mengira ia lama (P) atau baru (PR/PM)
                     for opt_idx, opt_val in enumerate(opts_p):
-                        if opt_val.startswith(kod_only):
+                        # Jika kod asal di dalam CSV adalah P01, kita boleh memadankannya dengan PR01 dengan 
+                        # membuang awalan PR/PM atau P semasa perbandingan.
+                        clean_opt = opt_val.split('|')[0].strip().replace('PR', '').replace('PM', '').replace('P', '')
+                        clean_raw = kod_only.replace('PR', '').replace('PM', '').replace('P', '')
+                        if clean_opt == clean_raw and clean_opt != "":
                             idx_p = opt_idx
                             break
 
@@ -170,10 +185,9 @@ def render_tab_5(school_info):
                 with cp2:
                     p_re_inputs[f'Detail_P_{i}'] = st.text_input(f"Butiran Detail P_{i}:", value=raw_dp, key=f"re_det_p_{staf_index}_{i}")
 
-        # C. KOD J
+        # C. KOD J (MENGGUNAKAN SENARAI DINAMIK opts_j)
         j_re_inputs = {}
         max_j = st.session_state['re_j_batch']
-        opts_j = [""] + [f"{k} | {v[0]}" for k, v in MYSG_JAWATANKUASA_J.items()]
 
         with st.expander(f"🏛️ C. Jawatankuasa Sekolah (Kod J) — (Paparan 1 hingga {max_j})", expanded=True):
             st.caption("Pilih Kod J dan perincian jawatankuasa.")
@@ -186,7 +200,9 @@ def render_tab_5(school_info):
                 if raw_kj:
                     kod_j_only = raw_kj.split('|')[0].strip()
                     for opt_idx, opt_val in enumerate(opts_j):
-                        if opt_val.startswith(kod_j_only):
+                        clean_opt_j = opt_val.split('|')[0].strip().replace('JR', '').replace('JM', '').replace('J', '')
+                        clean_raw_j = kod_j_only.replace('JR', '').replace('JM', '').replace('J', '')
+                        if clean_opt_j == clean_raw_j and clean_opt_j != "":
                             idx_j = opt_idx
                             break
 
@@ -205,7 +221,6 @@ def render_tab_5(school_info):
             if pin_pengesahan_3 != school_info.get('admin_pin', '1234'):
                 st.error("🔒 PIN Pengesahan salah! Akses ditolak. Hanya pentadbir yang sah dibenarkan merombak tugas.")
             else:
-                # PENUKARAN KEPADA SENARAI DIKSIONARI UNTUK ELAK MENGGANTI LANGSUNG SEL FLOAT64 DATAFRAME
                 df_dict_list = df_staff.to_dict(orient='records')
                 target_dict = df_dict_list[staf_index]
 
@@ -252,13 +267,11 @@ def render_tab_5(school_info):
                     target_dict[f'Detail_J_{i}'] = dj_val if dj_val else None
 
                 try:
-                    # BINA DATAFRAME BARU DARIPADA REKOD DIKSIONARI
                     df_updated_new = pd.DataFrame(df_dict_list)
                     df_recalculated = calculate_workload_df(df_updated_new, jenis_sek)
                     st.session_state['staff_df'] = df_recalculated
                     st.session_state['data_version'] = int(time.time())
                     
-                    # REKOD LOG AKTIVITI
                     if 'audit_log' not in st.session_state:
                         st.session_state['audit_log'] = []
                     st.session_state['audit_log'].append({
