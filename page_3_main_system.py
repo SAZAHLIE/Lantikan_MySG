@@ -16,6 +16,7 @@ import tab_3_detailed_reports
 import tab_4_staff_registration
 import tab_5_reassign_workload
 import tab_6_appointment_letters
+import tab_7_org_chart
 
 def render_page_3():
     """Membina navigasi Halaman 3 (Tab Utama sahaja, Footer dikendalikan oleh app.py)."""
@@ -104,13 +105,14 @@ def render_page_3():
     # -------------------------------------------------------------------
     # PAPARAN TAB UTAMA SISTEM
     # -------------------------------------------------------------------
-    t1, t2, t3, t4, t5, t6 = st.tabs([
+    t1, t2, t3, t4, t5, t6, t7 = st.tabs([
         "📊 Dashboard & Analisis",
         "👥 Jadual Agihan & Pemberatan Tugas",
         "📋 Laporan Perincian & Bandingan",
         "🔄 Pendaftaran Masuk / Keluar",
         "⚙️ Penetapan Semula Tugas",
-        "📑 Penjana Surat Lantikan Tugas"
+        "📑 Penjana Surat Lantikan Tugas",
+        "🏢 Carta Organisasi"
     ])
 
     with t1:
@@ -130,3 +132,6 @@ def render_page_3():
 
     with t6:
         tab_6_appointment_letters.render_tab_6(school_info)
+
+    with t7:
+        tab_7_org_chart.render_tab_7(school_info)
