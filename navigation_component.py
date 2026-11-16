@@ -13,7 +13,7 @@ import io
 import datetime
 from crypto_vault import encrypt_payload
 
-def render_navigation():
+def render_navigation_bar():
     """Fungsi pembina bar kawalan navigasi di bawah skrin dan butang eksport Vault/Excel."""
     
     col_nav1, col_nav2 = st.columns([4, 1])
