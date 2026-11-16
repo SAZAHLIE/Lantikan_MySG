@@ -152,27 +152,51 @@ MYSG_PORTFOLIO_H_SM = {
 # MAPPING PORTFOLIO P
 MYSG_PORTFOLIO_P = {
     "P01": ("Guru Kelas", 2.0),
-    "P02": ("Ketua Panitia Mata Pelajaran", 2.0),
-    "P03": ("Setiausaha Peperiksaan / Pentaksiran", 3.0),
-    "P04": ("Guru Sukan / Permainan", 2.0),
-    "P05": ("Guru Penyelaras Kelab / Persatuan", 2.0),
-    "P06": ("Guru Penyelaras Badan Beruniform", 2.0),
-    "P07": ("Penyelaras Bilik-Bilik Khas", 1.5),
-    "P08": ("Guru SPBT", 2.0),
-    "P09": ("Guru Disiplin / Pengawas", 2.5),
-    "P10": ("Guru 3K (Kebersihan, Kesihatan, Keselamatan)", 2.0)
+    "P02": ("Guru Bertugas Harian", 2.0),
+    "P03": ("Penyelaras Program Pendidikan Khas Integrasi Lantikan Dalaman", 2.0),
+    "P04": ("Setiausaha Latihan dalam Perkhidmatan", 2.0),
+    "P05": ("Penyelaras Tahun", 2.0),
+    "P06": ("Setiausaha Jawatankuasa", 2.0),
+    "P07": ("Guru Bimbingan Lantikan Dalaman", 2.0),
+    "P08": ("Ketua Panitia", 2.0),
+    "P09": ("Setiausaha Peperiksaan Dalaman", 2.0),
+    "P10": ("Setiausaha Peperiksaan Awam", 2.0),
+    "P11": ("Penyelaras ICT Lantikan Dalaman", 2.0),
+    "P12": ("Penyelaras Pusat Sumber Sekolah Lantikan Dalaman", 2.0),
+    "P13": ("Guru Resos Masalah Penglihatan", 2.0),
+    "P14": ("Ketua Guru Disiplin", 2.0),
+    "P15": ("Penyelaras Skim Pinjaman Buku Teks", 2.0),
+    "P16": ("Warden Asrama", 2.0),
+    "P17": ("Setiausaha Sukan", 2.0),
+    "P18": ("Penyelaras Unit-Unit Kokurikulum", 2.0),
+    "P19": ("Guru Penasihat Unit-Unit Kokurikulum", 2.0)
 }
 
 # MAPPING JAWATANKUASA J
 MYSG_JAWATANKUASA_J = {
-    "J01": ("AJK Pengurusan & Pentadbiran Sekolah", 1.0),
-    "J02": ("AJK Kurikulum Sekolah", 1.0),
-    "J03": ("AJK Hal Ehwal Murid (HEM)", 1.0),
-    "J04": ("AJK Kokurikulum Sekolah", 1.0),
-    "J05": ("AJK Kewangan & Aset Sekolah", 1.0),
-    "J06": ("AJK Pembangunan & Penyelenggaraan Fizikal", 1.0),
-    "J07": ("AJK Bencana & Keselamatan Sekolah", 1.0),
-    "J08": ("AJK PIBG / KSIB", 1.0)
+    "J01": ("JK Pengurusan Sekolah", 1.0),
+    "J02": ("JK Pengurusan Maklumat Sekolah", 1.0),
+    "J03": ("JK Pengurusan Sumber Manusia", 1.0),
+    "J04": ("JK Pengurusan Kewangan, Akaun dan Aset Sekolah", 1.0),
+    "J05": ("JK Standard Kualiti Pendidikan Malaysia", 1.0),
+    "J06": ("JK Pendidikan Khas Sekolah", 1.0),
+    "J07": ("JK Pengurusan Prasekolah", 1.0),
+    "J08": ("JK Pengurusan Bencana Sekolah", 1.0),
+    "J09": ("JK Persatuan Ibu Bapa dan Guru (PIBG)", 1.0),
+    "J10": ("JK Kelab Kebajikan Guru dan Kakitangan", 1.0),
+    "J11": ("JK Pengurusan Murid Orang Asli", 1.0),
+    "J12": ("JK Pengurusan Kurikulum", 1.0),
+    "J13": ("JK Panitia Mata Pelajaran", 1.0),
+    "J14": ("JK Pentaksiran", 1.0),
+    "J15": ("JK Pengurusan Sumber dan Teknologi Pendidikan", 1.0),
+    "J16": ("JK Pengurusan Hal Ehwal Murid (HEM)", 1.0),
+    "J17": ("JK Pengurusan Disiplin Murid", 1.0),
+    "J18": ("JK Pengurusan 3K (Kebersihan, Kesihatan dan Keselamatan)", 1.0),
+    "J19": ("JK Bimbingan dan Kaunseling", 1.0),
+    "J20": ("JK Pengurusan Asrama", 1.0),
+    "J21": ("JK Pengurusan Kokurikulum", 1.0),
+    "J22": ("JK Pembangunan Sukan Sekolah", 1.0),
+    "J23": ("JK Sukan Tahunan Sekolah", 1.0)
 }
 
 def determine_kategori_staf(row):
