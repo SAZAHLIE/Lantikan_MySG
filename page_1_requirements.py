@@ -27,6 +27,26 @@ def sanitize_dataframe_text(df):
                 df[col] = df[col].apply(lambda x: re.sub(r'<[^>]*>', '', str(x)) if pd.notna(x) else x)
     return df
 
+def generate_empty_106_col_df():
+    """
+    Menjana DataFrame templat standard 106 lajur yang kosong 
+    sebagai asas jika pengguna memilih untuk tidak memuat naik fail CSV.
+    """
+    cols = ['Nama', 'No_KP', 'Kumpulan', 'Gred', 'Jawatan']
+
+    for i in range(1, 12):
+        cols.extend([f'Subjek_{i}', f'Kelas_{i}', f'Waktu_{i}'])
+    for i in range(12, 16):
+        cols.extend([f'Subjek_{i}', f'Waktu_{i}'])
+
+    for i in range(1, 16):
+        cols.extend([f'Kod_P_{i}', f'Detail_P_{i}'])
+
+    for i in range(1, 16):
+        cols.extend([f'Kod_J_{i}', f'Detail_J_{i}'])
+
+    return pd.DataFrame(columns=cols)
+
 def generate_106_col_template_df():
     """
     Menjana DataFrame templat standard 106 lajur mengikut ketetapan Dataset_KPM_Terlaras_butir_15.
@@ -338,11 +358,11 @@ def render_page_1():
                     st.error("❌ Ralat: Fail vault tidak sah, telah rosak, atau menggunakan format versi lama yang tidak disokong.")
 
     # -------------------------------------------------------------------
-    # MOD 2: PENGGUNA BARU (PROFIL SEKOLAH + PRATONTON LENCANA AUTOMATIK + CSV)
+    # MOD 2: PENGGUNA BARU (PROFIL SEKOLAH + PRATONTON LENCANA AUTOMATIK + CSV OPSIONAL)
     # -------------------------------------------------------------------
     else:
         st.markdown("<h3 class='card-title' style='font-size: 18px !important;'>🏛️ Pendaftaran Profil Sekolah & Muat Naik CSV Staf</h3>", unsafe_allow_html=True)
-        st.caption("Lengkapkan maklumat profil sekolah dan muat naik fail CSV staf secara berpusat di bawah.")
+        st.caption("Lengkapkan maklumat profil sekolah di bawah. Anda boleh memilih untuk memuat naik fail CSV staf, atau memulakan sistem dengan pangkalan data kosong.")
         
         info_sec = st.session_state.get('school_info', {})
 
@@ -379,8 +399,6 @@ def render_page_1():
                 placeholder="Contoh: KP/XBA2004/MYSG/2027/01",
                 key="input_no_rujukan"
             )
-            
-            # RUANG INPUT PIN KESELAMATAN TELAH DIBUANG DARI SINI
 
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("🖼️ **Muat Naik Lencana Sekolah (Optional)**")
@@ -394,16 +412,15 @@ def render_page_1():
                 st.image(info_sec.get('logo_base64'), width=120)
 
         st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
-        st.markdown("<h4 class='card-title'>📊 Muat Naik Fail CSV Staf Sekolah (Standard MySG 106 Lajur)</h4>", unsafe_allow_html=True)
-        uploaded_csv = st.file_uploader("Pilih fail CSV Staf yang telah diisi mengikut templat:", type=['csv'], key="p1_upload_csv_btn")
+        st.markdown("<h4 class='card-title'>📊 Muat Naik Fail CSV Staf Sekolah (Pilihan / Opsional)</h4>", unsafe_allow_html=True)
+        st.caption("Anda boleh memuat naik fail CSV (Standard MySG 106 Lajur) untuk memasukkan senarai guru dengan pantas, ATAU membiarkan ruangan ini kosong untuk memulakan sistem dengan pangkalan data kosong dan mendaftar guru secara manual kemudian.")
+        uploaded_csv = st.file_uploader("Pilih fail CSV Staf (Optional):", type=['csv'], key="p1_upload_csv_btn")
 
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("💾 Sahkan Profil & Proses Data Staf", type="primary", use_container_width=True, key="btn_confirm_process_new"):
+        if st.button("💾 Sahkan Profil & Mula Sistem", type="primary", use_container_width=True, key="btn_confirm_process_new"):
             if not nama_sek.strip() or not kod_sek.strip() or not nama_gb.strip():
                 st.error("❌ Sila lengkapkan maklumat bertanda (*) iaitu Nama Sekolah, Kod Sekolah, dan Nama Pengetua.")
-            elif uploaded_csv is None:
-                st.error("⚠️ Sila muat naik fail CSV Staf untuk meneruskan pengiraan beban kerja.")
             else:
                 try:
                     # 1. Simpan Maklumat Profil Sekolah ke Session
@@ -430,13 +447,19 @@ def render_page_1():
                         'emel_rasmi': emel_rasmi.strip(),
                         'nama_gb': nama_gb.upper().strip(),
                         'no_rujukan': no_rujukan.strip(), 
-                        'admin_pin': '1234', # Pin lalai memandangkan ia tidak lagi digunakan di halaman depan
+                        'admin_pin': '1234', 
                         'tahun_sesi': tahun_sesi,
                         'logo_base64': logo_b64
                     }
 
-                    # 2. Baca dan Hitung Beban Kerja CSV Staf
-                    df_raw = pd.read_csv(uploaded_csv)
+                    # 2. Semak jika CSV dimuat naik atau tidak
+                    if uploaded_csv is not None:
+                        df_raw = pd.read_csv(uploaded_csv)
+                        msg_status = f"{len(df_raw)} rekod staf berjaya diproses"
+                    else:
+                        # Hasilkan template kosong jika CSV tiada
+                        df_raw = generate_empty_106_col_df()
+                        msg_status = "Pangkalan data kosong sedia digunakan"
                     
                     # Laksanakan proses Sanitasi
                     df_raw = sanitize_dataframe_text(df_raw)
@@ -444,9 +467,9 @@ def render_page_1():
                     df_processed = calculate_workload_df(df_raw, jenis_sek)
                     st.session_state.staff_df = df_processed
 
-                    st.success(f"✅ Profil sekolah disahkan & {len(df_processed)} rekod staf berjaya diproses! Beralih ke Dashboard Utama...")
+                    st.success(f"✅ Profil sekolah disahkan & {msg_status}! Beralih ke Dashboard Utama...")
                     st.session_state.current_step = 3
                     st.rerun()
 
                 except Exception as e:
-                    st.error(f"❌ Ralat memproses fail CSV: {str(e)}")
+                    st.error(f"❌ Ralat memproses data: {str(e)}")
