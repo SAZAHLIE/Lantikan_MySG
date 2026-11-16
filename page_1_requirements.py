@@ -301,8 +301,6 @@ def render_page_1():
         st.markdown("<h3 class='card-title' style='font-size: 18px !important;'>🔓 Buka Fail Vault Terenkripsi</h3>", unsafe_allow_html=True)
         uploaded_vault = st.file_uploader("Muat naik fail Vault Sekolah (.mysg / .json):", type=["mysg", "json", "vault"], key="p1_upload_vault")
         
-        # PENTING: Ruang input kata laluan telah dibuang di sini kerana ia diuruskan secara automatik
-
         if st.button("🔓 Dekrip & Buka Data Sekolah", type="primary", use_container_width=True, key="p1_btn_decrypt"):
             if not uploaded_vault:
                 st.error("⚠️ Sila muat naik fail vault terlebih dahulu.")
@@ -381,12 +379,8 @@ def render_page_1():
                 placeholder="Contoh: KP/XBA2004/MYSG/2027/01",
                 key="input_no_rujukan"
             )
-            admin_pin = st.text_input(
-                "Tetapan PIN Keselamatan Pentadbir *", 
-                value=info_sec.get('admin_pin', '1234'),
-                type="password",
-                help="PIN ini diperlukan untuk mendaftar, membuang, atau merombak tugas kakitangan."
-            )
+            
+            # RUANG INPUT PIN KESELAMATAN TELAH DIBUANG DARI SINI
 
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("🖼️ **Muat Naik Lencana Sekolah (Optional)**")
@@ -406,8 +400,8 @@ def render_page_1():
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("💾 Sahkan Profil & Proses Data Staf", type="primary", use_container_width=True, key="btn_confirm_process_new"):
-            if not nama_sek.strip() or not kod_sek.strip() or not nama_gb.strip() or not admin_pin.strip():
-                st.error("❌ Sila lengkapkan maklumat bertanda (*) iaitu Nama Sekolah, Kod Sekolah, Nama Pengetua, dan PIN Pentadbir.")
+            if not nama_sek.strip() or not kod_sek.strip() or not nama_gb.strip():
+                st.error("❌ Sila lengkapkan maklumat bertanda (*) iaitu Nama Sekolah, Kod Sekolah, dan Nama Pengetua.")
             elif uploaded_csv is None:
                 st.error("⚠️ Sila muat naik fail CSV Staf untuk meneruskan pengiraan beban kerja.")
             else:
@@ -436,7 +430,7 @@ def render_page_1():
                         'emel_rasmi': emel_rasmi.strip(),
                         'nama_gb': nama_gb.upper().strip(),
                         'no_rujukan': no_rujukan.strip(), 
-                        'admin_pin': admin_pin.strip(),
+                        'admin_pin': '1234', # Pin lalai memandangkan ia tidak lagi digunakan di halaman depan
                         'tahun_sesi': tahun_sesi,
                         'logo_base64': logo_b64
                     }
