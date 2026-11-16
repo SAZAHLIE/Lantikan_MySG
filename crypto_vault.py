@@ -1,64 +1,61 @@
 """
 ========================================================================
-SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MODULE: CRYPTO VAULT ENGINE (AES-256 ENCRYPTION / DECRYPTION)
+MYSG KPM: MODUL STORAN BILIK KEBAL (ZERO-SERVER-STORAGE)
 ========================================================================
 """
 
 import json
 import base64
-import os
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import zlib
 
-def _generate_key_from_passphrase(passphrase: str, salt: bytes) -> bytes:
-    """Menjana kunci AES-256 daripada kata laluan pengguna mengikut standard PBKDF2"""
+# KATA LALUAN TETAP (HARDCODED) UNTUK PENYULITAN AUTOMATIK LATAR BELAKANG
+_HARDCODED_SECRET = "MYSG_KPM_SECURE_KEY_2026_MASTER"
+_SALT = b'mysg_kpm_salt_2026' 
+
+def _get_fernet():
+    """Menjana objek Fernet berasaskan kata laluan tetap dan salt."""
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=salt,
+        salt=_SALT,
         iterations=100000,
     )
-    return base64.urlsafe_b64encode(kdf.derive(passphrase.encode('utf-8')))
+    key = base64.urlsafe_b64encode(kdf.derive(_HARDCODED_SECRET.encode()))
+    return Fernet(key)
 
-def encrypt_payload(data_dict: dict, passphrase: str) -> bytes:
+def encrypt_payload(payload_dict):
     """
-    Menenkripsi JSON dictionary menjadi bytes terenkripsi selamat (AES-256).
-    Mengeksport data berserta salt untuk nyah-enkripsi selamat.
+    Mampatkan (compress) dan sulitkan (encrypt) data JSON secara automatik.
     """
-    if not passphrase:
-        raise ValueError("Kata laluan tidak boleh kosong.")
+    try:
+        json_str = json.dumps(payload_dict)
+        json_bytes = json_str.encode('utf-8')
+        
+        # Mampatkan data untuk menjimatkan ruang storan
+        compressed_bytes = zlib.compress(json_bytes)
+        
+        # Sulitkan menggunakan kunci tetap
+        f = _get_fernet()
+        encrypted_bytes = f.encrypt(compressed_bytes)
+        return encrypted_bytes
+    except Exception as e:
+        raise Exception(f"Gagal menyulitkan data: {str(e)}")
 
-    salt = os.urandom(16)
-    key = _generate_key_from_passphrase(passphrase, salt)
-    fernet = Fernet(key)
-
-    json_str = json.dumps(data_dict)
-    encrypted_bytes = fernet.encrypt(json_str.encode('utf-8'))
-
-    # Cantumkan Salt (16 bytes) di bahagian hadapan data terenkripsi
-    final_payload = salt + encrypted_bytes
-    return final_payload
-
-def decrypt_payload(encrypted_payload: bytes, passphrase: str) -> dict:
+def decrypt_payload(encrypted_bytes):
     """
-    Menyah-enkripsikan bytes terenkripsi menggunakan kata laluan.
-    Mengembalikan data asal dalam bentuk Python Dictionary.
+    Nyahsulit (decrypt) dan nyahmampat (decompress) fail .mysg secara automatik.
     """
-    if not passphrase:
-        raise ValueError("Kata laluan tidak boleh kosong.")
-    
-    if len(encrypted_payload) < 16:
-        raise ValueError("Format fail vault tidak sah atau rosak.")
-
-    # Ekstrak Salt (16 bytes pertama)
-    salt = encrypted_payload[:16]
-    actual_encrypted_data = encrypted_payload[16:]
-
-    key = _generate_key_from_passphrase(passphrase, salt)
-    fernet = Fernet(key)
-
-    decrypted_bytes = fernet.decrypt(actual_encrypted_data)
-    json_str = decrypted_bytes.decode('utf-8')
-    return json.loads(json_str)
+    try:
+        f = _get_fernet()
+        decrypted_compressed = f.decrypt(encrypted_bytes)
+        
+        # Nyahmampat data
+        decrypted_json_bytes = zlib.decompress(decrypted_compressed)
+        
+        json_str = decrypted_json_bytes.decode('utf-8')
+        return json.loads(json_str)
+    except Exception as e:
+        raise Exception("Gagal menyahsulit data. Fail mungkin rosak atau format tidak sah.")
