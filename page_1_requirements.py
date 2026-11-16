@@ -263,7 +263,7 @@ def render_page_1():
             st.markdown("""
             🔒 **Perlindungan Data Peribadi (PDPA & Zero-Server-Storage):**
             * **Tiada Pangkalan Data Pelayan:** Data sekolah dan maklumat peribadi staf (Nama, No. KP, Gred) **TIDAK DISIMPAN** pada pelayan awam cloud.
-            * **Enkripsi AES-256:** Fail *Vault* (`.mysg`) dilindungi sepenuhnya dengan teknologi enkripsi gred tentera AES-256.
+            * **Enkripsi AES-256:** Fail *Vault* (`.mysg`) dilindungi sepenuhnya dengan teknologi enkripsi gred tentera AES-256 secara automatik.
             * **Pembersihan Memori:** Memori sementara (*session state*) dipadamkan secara automatik apabila anda menekan butang **Keluar Sistem**.
             """)
         with col_sec2:
@@ -282,7 +282,7 @@ def render_page_1():
     st.markdown("<h2 class='section-header'>🔑 Modul Storan Selamat (Zero-Server-Storage)</h2>", unsafe_allow_html=True)
     st.info(
         "Sistem ini mematuhi Akta Perlindungan Data Peribadi (PDPA). "
-        "Tiada data disimpan pada pelayan. Anda boleh menyimpan atau membuka vault terenkripsi (.mysg) secara terus pada komputer anda."
+        "Tiada data disimpan pada pelayan. Anda boleh memuat naik atau memuat turun fail vault terenkripsi (.mysg) dengan selamat."
     )
 
     mode = st.radio(
@@ -295,22 +295,23 @@ def render_page_1():
     st.markdown("---")
 
     # -------------------------------------------------------------------
-    # MOD 1: PENGGUNA ULANGAN
+    # MOD 1: PENGGUNA ULANGAN (ZERO-CONFIG ENCRYPTION)
     # -------------------------------------------------------------------
     if mode == "📂 Pengguna Ulangan (Buka Vault Terenkripsi .mysg)":
         st.markdown("<h3 class='card-title' style='font-size: 18px !important;'>🔓 Buka Fail Vault Terenkripsi</h3>", unsafe_allow_html=True)
         uploaded_vault = st.file_uploader("Muat naik fail Vault Sekolah (.mysg / .json):", type=["mysg", "json", "vault"], key="p1_upload_vault")
-        passphrase = st.text_input("Masukkan Kata Laluan / Kunci Rahsia Vault:", type="password", key="p1_passphrase")
+        
+        # PENTING: Ruang input kata laluan telah dibuang di sini kerana ia diuruskan secara automatik
 
         if st.button("🔓 Dekrip & Buka Data Sekolah", type="primary", use_container_width=True, key="p1_btn_decrypt"):
             if not uploaded_vault:
                 st.error("⚠️ Sila muat naik fail vault terlebih dahulu.")
-            elif not passphrase:
-                st.error("⚠️ Sila masukkan kata laluan kunci rahsia vault.")
             else:
                 try:
                     encrypted_bytes = uploaded_vault.read()
-                    payload = decrypt_payload(encrypted_bytes, passphrase)
+                    
+                    # Nyahsulit secara automatik tanpa kata laluan luaran
+                    payload = decrypt_payload(encrypted_bytes)
 
                     if 'school_info' in payload:
                         st.session_state.school_info = payload['school_info']
@@ -328,7 +329,7 @@ def render_page_1():
                         jenis_sekolah = st.session_state.get('school_info', {}).get('jenis_sekolah', 'Sekolah Rendah')
                         df_processed = calculate_workload_df(df_raw, jenis_sekolah)
                         st.session_state.staff_df = df_processed
-                        st.success(f"✅ Vault berjaya didekrip! {len(df_processed)} rekod staf dan profil sekolah telah dimuatkan.")
+                        st.success(f"✅ Vault berjaya didekrip secara automatik! {len(df_processed)} rekod staf dan profil sekolah telah dimuatkan.")
                     else:
                         st.warning("⚠️ Vault didekrip tetapi tiada rekod data staf ditemui.")
 
@@ -336,7 +337,7 @@ def render_page_1():
                     st.rerun()
 
                 except Exception as e:
-                    st.error(f"❌ Kata laluan salah atau fail vault telah rosak / diubah suai! ({str(e)})")
+                    st.error("❌ Ralat: Fail vault tidak sah, telah rosak, atau menggunakan format versi lama yang tidak disokong.")
 
     # -------------------------------------------------------------------
     # MOD 2: PENGGUNA BARU (PROFIL SEKOLAH + PRATONTON LENCANA AUTOMATIK + CSV)
@@ -374,9 +375,6 @@ def render_page_1():
             tahun_sesi = st.selectbox("Sesi Persekolahan *", options=sesi_opts, index=sesi_index, key="select_tahun_sesi")
             nama_gb = st.text_input("Nama Pengetua / Guru Besar *", value=info_sec.get('nama_gb', ''), placeholder="Contoh: SAZAHLIE BIN SAPAR", key="input_nama_gb")
             
-            # ---------------------------------------------------------------
-            # TAMBAHAN RUANGAN TETAPAN RUJUKAN & PIN PADA BORANG LOG MASUK PERTAMA
-            # ---------------------------------------------------------------
             no_rujukan = st.text_input(
                 "No. Rujukan Surat Lantikan", 
                 value=info_sec.get('no_rujukan', ''),
@@ -394,9 +392,6 @@ def render_page_1():
             st.markdown("🖼️ **Muat Naik Lencana Sekolah (Optional)**")
             uploaded_logo = st.file_uploader("Pilih imej Lencana Sekolah (PNG / JPG)", type=['png', 'jpg', 'jpeg'], key="p1_upload_logo_btn")
 
-            # ---------------------------------------------------------------
-            # PRATONTON LENCANA AUTOMATIK (REAL-TIME LIVE PREVIEW)
-            # ---------------------------------------------------------------
             if uploaded_logo is not None:
                 st.caption("🔍 **Pratonton Lencana Sekolah Terpilih:**")
                 st.image(uploaded_logo, width=120)
@@ -440,7 +435,7 @@ def render_page_1():
                         'no_faks': no_fax.strip(),
                         'emel_rasmi': emel_rasmi.strip(),
                         'nama_gb': nama_gb.upper().strip(),
-                        'no_rujukan': no_rujukan.strip(), # Sila pastikan param ini wujud di sini
+                        'no_rujukan': no_rujukan.strip(), 
                         'admin_pin': admin_pin.strip(),
                         'tahun_sesi': tahun_sesi,
                         'logo_base64': logo_b64
