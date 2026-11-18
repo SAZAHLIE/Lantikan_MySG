@@ -111,6 +111,7 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
                 gred = str(row.get('Gred', '-')).replace('(nan)', '').replace('nan', '').strip()
                 jawatan_gred = f"{jawatan} ({gred})" if (gred and gred != '-') else jawatan
 
+                # GUNAKAN NILAI DARI df_calc YANG TELAH DIKIRA SEMULA (Jam_Port_H)
                 jam_pdp = round(row['Jam_PdP'], 1)
                 jam_port_h = round(row['Jam_Port_H'], 1)
                 jam_port_p = round(row['Jam_Port_P'], 1)
