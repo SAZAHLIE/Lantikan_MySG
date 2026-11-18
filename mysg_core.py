@@ -7,6 +7,7 @@ MYSG CORE MODULE - PENGIRAAN TAPAK ASAS (BASE) + PDP
 
 import pandas as pd
 import numpy as np
+import re
 
 SYSTEM_NAME = "MySG KPM: Sistem Pengurusan & Analisis Beban Kerja"
 SYSTEM_VERSION = "1.0.0"
@@ -29,7 +30,7 @@ JAWATAN_RASMI_KPM = [
     "PEMBANTU PENGURUSAN MURID", "JURUTEKNIK KOMPUTER", "PEMBANTU OPERASI"
 ]
 
-# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH RENDAH (DILARAS DENGAN TAPAK ASAS PENGURUSAN/RUTIN)
+# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH RENDAH
 MYSG_PORTFOLIO_H_SR = {
     "HR01": ("Guru Besar (PGB)", 37.5),
     "HR02": ("Guru Penolong Kanan Pentadbiran", 34.0),
@@ -52,7 +53,7 @@ MYSG_PORTFOLIO_H_SR = {
     "HR19": ("Guru Program Integrasi / Pendidikan Khas (PPKI)", 20.0),
     "HR20": ("Guru Kod Braille", 20.0),
     "HR21": ("Guru Kod Tangan", 20.0),
-    "HR22": ("Guru Bimbingan (GBK)", 38.0), # GBK biasanya tiada waktu PdP standard, diset ke 38.0 jam penuh
+    "HR22": ("Guru Bimbingan (GBK)", 38.0), 
     "HR23": ("Guru Kaunseling (K9)", 38.0),
     "HR24": ("Pembantu Tadbir (P/O)", 40.0),
     "HR25": ("Pembantu Tadbir (Kewangan)", 40.0),
@@ -70,7 +71,7 @@ MYSG_PORTFOLIO_H_SR = {
     "HR37": ("Pembantu Kemahiran (SKPK)", 40.0)
 }
 
-# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH MENENGAH (DILARAS DENGAN TAPAK ASAS PENGURUSAN/RUTIN)
+# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH MENENGAH
 MYSG_PORTFOLIO_H_SM = {
     "HM01": ("Pengetua (PGB)", 37.5),
     "HM02": ("Guru Penolong Kanan Pentadbiran", 34.0),
@@ -200,9 +201,6 @@ MYSG_JAWATANKUASA_J = {
 }
 
 def determine_kategori_staf(row):
-    """
-    Mengenal pasti sama ada staf ialah 'Guru' atau 'Anggota Kumpulan Pelaksana'
-    """
     kumpulan_input = str(row.get('Kumpulan', '')).strip()
     if kumpulan_input in ['Guru', 'Anggota Kumpulan Pelaksana']:
         return kumpulan_input
@@ -247,13 +245,11 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
     kadar_pdp_jam = 40.0 / 60.0 if is_sm else 30.0 / 60.0
     mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
 
-    # 1. Setkan lajur Kumpulan
     df_out['Kumpulan'] = df_out.apply(determine_kategori_staf, axis=1)
 
     if 'Kategori_Staf' in df_out.columns:
         df_out.drop(columns=['Kategori_Staf'], inplace=True)
 
-    # 2. Hitung Jam PdP
     pdp_cols = [c for c in df_out.columns if c.startswith('Waktu_')]
     if pdp_cols:
         for col in pdp_cols:
@@ -264,16 +260,19 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
         df_out['JUMLAH_WAKTU_PDP'] = 0
         df_out['JUMLAH_JAM_PDP'] = 0.0
 
-    # 3. Hitung Jam Portfolio H (Menggunakan Tapak Asas)
+    # PENGECAMAN PINTAR: SEDUT KOD DARI JAWATAN JIKA KOD_H_1 KOSONG
     def get_jam_h(row):
         kod_raw = extract_code(row.get('Kod_H_1', ''))
+        if not kod_raw:
+            m = re.search(r'(HR|HM)(\d{2})', str(row.get('Jawatan', '')))
+            if m:
+                kod_raw = f"{m.group(1)}{m.group(2)}"
         if kod_raw in mapping_h:
             return mapping_h[kod_raw][1]
         return 0.0
 
     df_out['JUMLAH_JAM_PORTFOLIO_H'] = df_out.apply(get_jam_h, axis=1)
 
-    # 4. Hitung Jam Portfolio P
     p_cols = [c for c in df_out.columns if c.startswith('Kod_P_')]
     def get_jam_p(row):
         total_p = 0.0
@@ -290,7 +289,6 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
 
     df_out['JUMLAH_JAM_PORTFOLIO_P'] = df_out.apply(get_jam_p, axis=1) if p_cols else 0.0
 
-    # 5. Hitung Jam Jawatankuasa J
     j_cols = [c for c in df_out.columns if c.startswith('Kod_J_')]
     def get_jam_j(row):
         total_j = 0.0
@@ -307,7 +305,6 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
 
     df_out['JUMLAH_JAM_JAWATANKUASA'] = df_out.apply(get_jam_j, axis=1) if j_cols else 0.0
 
-    # 6. Hitung Jumlah Beban Keseluruhan (Gabungan PdP + Tapak Asas + P + J)
     df_out['JUMLAH_BEBAN_KESELURAHAN'] = (
         df_out['JUMLAH_JAM_PDP'] +
         df_out['JUMLAH_JAM_PORTFOLIO_H'] +
@@ -315,7 +312,6 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
         df_out['JUMLAH_JAM_JAWATANKUASA']
     )
 
-    # 7. Susun Semula
     cols = list(df_out.columns)
     if 'Kumpulan' in cols:
         cols.remove('Kumpulan')
