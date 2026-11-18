@@ -89,7 +89,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
         school_info = {}
 
     header_html = get_official_letterhead(school_info)
-    footer_garis_html = get_appointment_letter_footer(school_info)
+    footer_garis_html = get_appointment_letter_footer_html(school_info)
     css_theme = get_a4_print_css(orientation='portrait')
 
     nama = str(staf_row.get('Nama', 'ABDUL SABAH @ MOHD SABA B MOHD')).upper()
