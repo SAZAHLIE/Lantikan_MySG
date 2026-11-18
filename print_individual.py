@@ -8,10 +8,9 @@ import pandas as pd
 from datetime import datetime
 from letterhead_template import (
     get_official_letterhead, 
-    get_official_letter_footer, 
+    get_appointment_letter_footer,
     get_a4_print_css
 )
-from letter_footer import get_appointment_letter_footer_html
 from mysg_core import MYSG_PORTFOLIO_H_SM, MYSG_PORTFOLIO_H_SR, MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
 
 def get_malay_official_date():
@@ -36,7 +35,6 @@ def extract_pdp_from_row(staf_row):
             kelas = staf_row.get(f'Kelas_{i}', '-')
             waktu = staf_row.get(f'Waktu_{i}', '2')
             
-            # Semakan ralat untuk memastikan waktu sentiasa numerik
             try:
                 waktu_val = float(waktu)
             except ValueError:
@@ -91,10 +89,12 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
         school_info = {}
 
     header_html = get_official_letterhead(school_info)
-    footer_garis_html = get_appointment_letter_footer_html(school_info)
+    footer_garis_html = get_appointment_letter_footer(school_info)
     css_theme = get_a4_print_css(orientation='portrait')
 
     nama = str(staf_row.get('Nama', 'ABDUL SABAH @ MOHD SABA B MOHD')).upper()
+    
+    # PERUBAHAN: PAPARAN IC PENUH TANPA XXXX
     ic_no = str(staf_row.get('No_KP', '-')).replace('nan', '-').replace('None', '-')
     if not ic_no or ic_no == 'nan':
         ic_no = '-'
@@ -105,16 +105,13 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR SANDAKAN')).upper()
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
 
-    ruj_prefix = school_info.get('ruj_kami_prefix', f"KP/{kod_sekolah}/MYSG/{tahun_sesi.split('/')[0]}/")
-    if not ruj_prefix.endswith('/'):
-        ruj_prefix += '/'
-    
+    ruj_prefix = str(school_info.get('ruj_kami', f"KP/{kod_sekolah}/MYSG/{tahun_sesi.split('/')[0]}/"))
     ruj_kami_formatted = f"<span style='white-space: nowrap;'>{ruj_prefix}( &nbsp;&nbsp;&nbsp;&nbsp; )</span>"
 
     tarikh_rasmi = get_malay_official_date()
     jawatan_hakiki = str(staf_row.get('Kod_H_1', staf_row.get('Jawatan', 'HR24 | PEMBANTU TADBIR (P/O)'))).strip()
 
-    # 1. PDP LIST (2.1.X) (DIKEMASKINI DENGAN HELPER)
+    # 1. PDP LIST (2.1.X)
     pdp_html_list = ""
     pdp_list = extract_pdp_from_row(staf_row)
     if len(pdp_list) > 0:
@@ -126,25 +123,35 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     else:
         pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.1. Tiada Rekod Pengajaran (PdP)</div>"
 
-    # 2. PORTFOLIO TANPA JAWATAN (2.2.X) (DIKEMASKINI DENGAN HELPER)
+    # 2. PORTFOLIO TANPA JAWATAN (2.2.X)
     p_html_list = ""
     p_list = extract_portfolio_from_row(staf_row)
     if len(p_list) > 0:
         for idx, item in enumerate(p_list, start=1):
             kod_p = item.get('kod', 'P')
             perincian_p = item.get('perincian', '-')
-            p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {kod_p} | {perincian_p}</div>"
+            
+            # Buang ulangan nama portfolio dalam perincian jika ada
+            label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(kod_p, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
+            dtl_str = f": {perincian_p}" if perincian_p and perincian_p != label_p and perincian_p not in label_p else ""
+            
+            p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {label_p}{dtl_str}</div>"
     else:
         p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.1. Tiada Portfolio Ditetapkan</div>"
 
-    # 3. JAWATANKUASA (2.3.X) (DIKEMASKINI DENGAN HELPER)
+    # 3. JAWATANKUASA (2.3.X)
     j_html_list = ""
     j_list = extract_jk_from_row(staf_row)
     if len(j_list) > 0:
         for idx, item in enumerate(j_list, start=1):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
-            j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {kod_j} | {perincian_j}</div>"
+            
+            # Buang ulangan nama jawatankuasa dalam perincian jika ada
+            label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_j, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
+            dtl_str = f": {perincian_j}" if perincian_j and perincian_j != label_j and perincian_j not in label_j else ""
+            
+            j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {label_j}{dtl_str}</div>"
     else:
         j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.1. Tiada Jawatankuasa Ditetapkan</div>"
 
@@ -160,6 +167,11 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             @page {{
                 size: A4 portrait;
                 margin: 1.8cm 2.2cm 1.8cm 2.2cm;
+                @bottom-right {{
+                    content: "..." counter(page);
+                    font-size: 9.5pt;
+                    font-family: Arial, sans-serif;
+                }}
             }}
 
             html, body {{
@@ -208,23 +220,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
                 margin-top: 2px;
                 margin-bottom: 2px;
                 text-transform: uppercase;
-            }}
-
-            .page-continuation {{
-                text-align: right;
-                font-size: 9.5pt;
-                font-family: Arial, sans-serif;
-                margin-top: 11pt;
-                margin-bottom: 11pt;
-            }}
-
-            .letter-disclaimer-content {{
-                margin-top: 18pt;
-                padding-top: 2pt;
-                font-size: 5pt !important;
-                color: #555555;
-                font-family: Arial, sans-serif;
-                text-align: left;
             }}
         </style>
     </head>
@@ -292,11 +287,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
                 {j_html_list}
             </div>
 
-            <!-- PENOMBORAN MUKA SURAT SAMBUNGAN PERTAMA -->
-            <div class="page-continuation">
-                ...2
-            </div>
-
             <div class="content-p">
                 3. Sehubungan dengan itu, tuan/puan dinasihatkan untuk merujuk dan memahami tugas serta tanggungjawab yang ditetapkan selaras dengan Garis Panduan Tadbir Urus Sekolah (MySG KPM).
             </div>
@@ -310,7 +300,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             </div>
 
             <!-- MOTTO/SLOGAN: 1 BARIS LANGKAU -->
-            <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt; margin-top: 11pt; margin-bottom: 11pt;">
+            <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt; margin-bottom: 11pt;">
                 "MALAYSIA MADANI"<br><br>
                 "BERKHIDMAT UNTUK NEGARA"
             </div>
@@ -324,11 +314,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
                     {jawatan_gb}<br>
                     {nama_sekolah}
                 </span>
-            </div>
-
-            <!-- TEKS PENAFIAN MYSG KPM (SAIZ FONT 5PT SEBAGAI ISI SURAT) -->
-            <div class="letter-disclaimer-content">
-                <i>Dokumen Rasmi Dijana Menerusi MySG KPM: Sistem Pengurusan & Analisis Beban Kerja ({kod_sekolah})</i>
             </div>
 
             <!-- KAKI SURAT (GARISAN HITAM LURUS) -->
@@ -350,7 +335,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         school_info = {}
 
     header_html = get_official_letterhead(school_info)
-    footer_html = get_official_letter_footer(school_info)
     css_theme = get_a4_print_css(orientation='portrait')
     jenis_sek = school_info.get('jenis_sekolah', 'Sekolah Rendah')
 
@@ -362,12 +346,16 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     detail_h = str(staf_row.get('Detail_H_1', '')).upper()
     jawatan_hakiki = f"{kod_h} | {detail_h}" if kod_h else str(staf_row.get('Jawatan', 'HR12 | Guru Akademik KSSR'))
     
+    # PERUBAHAN: PAPARAN IC PENUH TANPA XXXX
+    ic_no = str(staf_row.get('No_KP', '-')).replace('nan', '-').replace('None', '-')
+    if not ic_no or ic_no == 'nan':
+        ic_no = '-'
+        
     kump_staf = str(staf_row.get('Kumpulan', 'Guru')).strip()
     tahun_sesi = str(school_info.get('tahun_sesi', '2027'))
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
     tarikh_hari = datetime.now().strftime("%d/%m/%Y %I:%M %p")
 
-    # Pastikan total_jam sentiasa jenis Float
     try:
         total_jam = float(staf_row.get('JUMLAH_BEBAN_KESELURAHAN', 0.0) or 0.0)
     except ValueError:
@@ -375,7 +363,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         
     total_jam = round(total_jam, 1)
 
-    # Dapatkan nilai Tapak Asas (Float)
     jam_tapak_asas = force_get_h_base_hours(staf_row, jenis_sek)
 
     purata_kumpulan = 38.0
@@ -392,7 +379,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     diff_text = f"+{diff_jam} jam dari purata" if diff_jam >= 0 else f"{diff_jam} jam dari purata"
     color_diff = "#d9534f" if diff_jam > 0 else "#2e7d32"
 
-    # PEMBAIKAN RALAT TYPEERROR: Gunakan kurungan dan pastikan semuanya nombor (Float)
     if float(total_jam) > 45.0:
         badge_status = '<span style="background-color: #fde8e8; color: #9b1c1c; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🔴 TINGGI</span>'
     elif float(total_jam) >= 37.0:
@@ -400,7 +386,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     else:
         badge_status = '<span style="background-color: #e1effe; color: #1e429f; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🔵 RINGAN</span>'
 
-    # PAPARAN KOD H & PDP
     rows_h_html = f"""
     <tr style="background-color: #fafafa;">
         <td style="padding-left: 12px;">• &nbsp; <b>{jawatan_hakiki}</b> <span style="color: #666; font-size: 7.5pt;">(Masa Pengurusan Hakiki / Persediaan)</span></td>
@@ -438,7 +423,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         </tr>
         """
 
-    # PAPARAN PORTFOLIO KOD P
     rows_p_html = ""
     p_list = extract_portfolio_from_row(staf_row)
     if len(p_list) > 0:
@@ -452,9 +436,13 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                 
             jam_val = round(jam_val, 1)
             bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
+            
+            label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(kod_p, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
+            dtl_str = f": {perincian_p}" if perincian_p and perincian_p != label_p and perincian_p not in label_p else ""
+            
             rows_p_html += f"""
             <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; <b>{kod_p}</b> | {perincian_p}</td>
+                <td style="padding-left: 12px;">• &nbsp; <b>{label_p}</b>{dtl_str}</td>
                 <td style="text-align: right; font-weight: bold; color: #2b579a;">{jam_val:.1f} jam</td>
             </tr>
             """
@@ -466,7 +454,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         </tr>
         """
 
-    # PAPARAN JAWATANKUASA KOD J
     rows_j_html = ""
     j_list = extract_jk_from_row(staf_row)
     if len(j_list) > 0:
@@ -480,9 +467,13 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                 
             jam_val = round(jam_val, 1)
             bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
+            
+            label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_j, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
+            dtl_str = f": {perincian_j}" if perincian_j and perincian_j != label_j and perincian_j not in label_j else ""
+            
             rows_j_html += f"""
             <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; <b>{kod_j}</b> | {perincian_j}</td>
+                <td style="padding-left: 12px;">• &nbsp; <b>{label_j}</b>{dtl_str}</td>
                 <td style="text-align: right; font-weight: bold; color: #2b579a;">{jam_val:.1f} jam</td>
             </tr>
             """
@@ -633,7 +624,8 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                         <td style="width: 58%; text-align: left;">
                             <b>Nama Pegawai:</b> {nama}<br>
                             <b>Jawatan Hakiki:</b> {jawatan_hakiki}<br>
-                            <b>Gred Perkhidmatan:</b> {gred_show}
+                            <b>Gred Perkhidmatan:</b> {gred_show}<br>
+                            <b>No. KP:</b> {ic_no}
                         </td>
                         <td style="width: 42%; text-align: left;">
                             <b>Kumpulan:</b> {kump_staf}<br>
