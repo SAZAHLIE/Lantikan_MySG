@@ -7,18 +7,6 @@ MYSG KPM: MODUL PENJANAAN LAPORAN BANDINGAN KESELURUHAN (A4 LANDSCAPE)
 import pandas as pd
 from datetime import datetime
 from letterhead_template import get_official_letterhead, get_a4_print_css
-from mysg_core import MYSG_PORTFOLIO_H_SM, MYSG_PORTFOLIO_H_SR, MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
-
-# FUNGSI HELPER UNTUK MEMAKSA AMBIL NILAI TAPAK ASAS
-def force_get_h_base_hours(row, jenis_sekolah="Sekolah Rendah"):
-    jam_h = row.get('JUMLAH_JAM_PORTFOLIO_H', None)
-    if pd.notna(jam_h) and float(jam_h) > 0:
-        return float(jam_h)
-    
-    is_sm = "Menengah" in str(jenis_sekolah)
-    mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
-    kod_h_raw = str(row.get('Kod_H_1', '')).split('|')[0].strip().upper()
-    return mapping_h.get(kod_h_raw, ('', 0.0))[1]
 
 def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESELURUHAN WARGA SEKOLAH", school_info=None, session_state=None, *args, **kwargs):
     """Menjana LAPORAN BEBAN KERJA KESELURUHAN (Ambang 45 Jam JPA)."""
@@ -34,7 +22,6 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
 
     header_html = get_official_letterhead(school_info)
     css_theme = get_a4_print_css(orientation='landscape')
-    jenis_sek = school_info.get('jenis_sekolah', 'Sekolah Rendah')
 
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR SANDAKAN')).upper()
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
@@ -49,9 +36,9 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
         jumlah_rekod = len(df_staff)
         df_calc = df_staff.copy()
         
-        # PENGIRAAN SEMULA UNTUK MEMASTIKAN NILAI TAPAK ASAS DIAMBIL
+        # MENGAMBIL NILAI TERUS DARI ENJIN MYSG_CORE YANG TELAH DIKEMASKINI
         df_calc['Jam_PdP'] = df_calc.get('JUMLAH_JAM_PDP', 0.0).astype(float)
-        df_calc['Jam_Port_H'] = df_calc.apply(lambda row: force_get_h_base_hours(row, jenis_sek), axis=1)
+        df_calc['Jam_Port_H'] = df_calc.get('JUMLAH_JAM_PORTFOLIO_H', 0.0).astype(float)
         df_calc['Jam_Port_P'] = df_calc.get('JUMLAH_JAM_PORTFOLIO_P', 0.0).astype(float)
         df_calc['Jam_JK'] = df_calc.get('JUMLAH_JAM_JAWATANKUASA', 0.0).astype(float)
         df_calc['Jam_Total'] = df_calc['Jam_PdP'] + df_calc['Jam_Port_H'] + df_calc['Jam_Port_P'] + df_calc['Jam_JK']
@@ -111,7 +98,6 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
                 gred = str(row.get('Gred', '-')).replace('(nan)', '').replace('nan', '').strip()
                 jawatan_gred = f"{jawatan} ({gred})" if (gred and gred != '-') else jawatan
 
-                # GUNAKAN NILAI DARI df_calc YANG TELAH DIKIRA SEMULA (Jam_Port_H)
                 jam_pdp = round(row['Jam_PdP'], 1)
                 jam_port_h = round(row['Jam_Port_H'], 1)
                 jam_port_p = round(row['Jam_Port_P'], 1)
@@ -132,7 +118,7 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
                     <td style="font-size: 8pt; white-space: nowrap; font-weight: bold;">{nama}</td>
                     <td style="font-size: 8pt; white-space: nowrap;">{jawatan_gred}</td>
                     <td style="text-align: center; font-size: 8pt;">{jam_pdp}</td>
-                    <td style="text-align: center; font-size: 8pt;">{jam_port_h}</td>
+                    <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #0f4c81;">{jam_port_h}</td>
                     <td style="text-align: center; font-size: 8pt;">{jam_port_p}</td>
                     <td style="text-align: center; font-size: 8pt;">{jam_jk}</td>
                     <td style="text-align: center; font-weight: bold; font-size: 8pt; background-color: #f9f9f9;">{total}</td>
@@ -268,7 +254,7 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
                     <th style="width: 25%; text-align: left;">NAMA PEGAWAI</th>
                     <th style="width: 22%; text-align: left;">JAWATAN & GRED</th>
                     <th style="width: 8%;">PDP (JAM)</th>
-                    <th style="width: 9%;">PORTFOLIO H (JAM)</th>
+                    <th style="width: 9%;">PORTFOLIO H / PERSEDIAAN (JAM)</th>
                     <th style="width: 9%;">PORTFOLIO P (JAM)</th>
                     <th style="width: 10%;">JAWATANKUASA J (JAM)</th>
                     <th style="width: 8%;">JUMLAH BEBAN</th>
