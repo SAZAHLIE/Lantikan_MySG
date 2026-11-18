@@ -48,12 +48,13 @@ def generate_simple_workload_report_html(df_staff, title="LAPORAN BEBAN KERJA WA
             jam_jk = round(row['Jam_JK'], 1)
             total = round(row['Jam_Total'], 1)
 
-            if total > 35.0:
+            # AMBANG STATUS BAHARU SELARAS JPA 45 JAM
+            if total > 45.0:
                 status_agihan = "<span style='color: #8b0000; font-weight: bold;'>🔴 TINGGI</span>"
-            elif total >= 20.0:
+            elif total >= 37.0:
                 status_agihan = "<span style='color: #2e7d32; font-weight: bold;'>🟢 SEIMBANG</span>"
             else:
-                status_agihan = "<span style='color: #f57c00; font-weight: bold;'>🟡 OPTIMUM</span>"
+                status_agihan = "<span style='color: #1e429f; font-weight: bold;'>🔵 RINGAN</span>"
 
             table_rows_html += f"""
             <tr>
@@ -169,13 +170,23 @@ def generate_simple_workload_report_html(df_staff, title="LAPORAN BEBAN KERJA WA
         </table>
 
         <!-- KOTAK MYSG KPM GUIDELINE -->
-        <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222;">
+        <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222; page-break-inside: avoid;">
             <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px; text-transform: uppercase;">
-                📌 KETETAPAN & GARIS PANDUAN PENETAPAN BEBAN KERJA WARGA SEKOLAH (MYSG KPM):
+                📌 KETETAPAN & GARIS PANDUAN PENGIRAAN BEBAN KERJA (MYSG KPM)
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; font-weight: 500;">
-                <div>• <b>Asas Pengiraan PdP:</b> 1 Waktu PdP = 0.5 Jam (30 Minit)</div>
-                <div>• <b>Beban Kerja Seimbang:</b> 20.0 – 32.0 Jam/Minggu (PPP) / 40.0 Jam (AKP)</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; margin-bottom: 4px; font-weight: 500;">
+                <div>• <b>Masa Asas 45 Jam:</b> Ditetapkan JPA selaras dengan <i>International Labour Organization</i> (ILO).</div>
+                <div>• <b>Pelaksanaan Masa 45 Jam (PGB & AKP):</b> Berdasarkan waktu bekerja pejabat (38 jam 30 minit bekerja + 6 jam 30 minit rehat).</div>
+                <div>• <b>Pelaksanaan Masa 45 Jam (Guru):</b> Gabungan Waktu Persekolahan (PdP & Bukan PdP) + Luar Waktu Persekolahan (Kokurikulum & Lain-lain/Rencam).</div>
+                <div>• <b>Tugasan Cuti Sekolah:</b> PGB boleh mengarahkan guru bertugas cuti sekolah maksimum separuh daripada jumlah hari cuti (Maks. 22 Hari/Tahun).</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px;">
+                <div>• <b>1. Pentadbir:</b> PdP minimum (3.0–6.0 Jam/Minggu). Fokus Portfolio Hakiki (Kod H) & Kepimpinan JK (Kod J).</div>
+                <div>• <b>2. Guru Akademik:</b> Beban optimum (37.0 - 45.0 Jam/Minggu). Lebih 45 Jam dikira beban <b>TINGGI</b>.</div>
+                <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP untuk menampung masa pengurusan hakiki.</div>
+                <div>• <b>4. AKP:</b> Masa kerja pejabat operasi (40.0 Jam/Minggu). Beban sampingan (Kod P/J) terhad.</div>
             </div>
         </div>
 
