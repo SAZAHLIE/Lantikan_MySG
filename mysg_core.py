@@ -1,7 +1,7 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MYSG CORE MODULE - PENYELESAIAN NONE DAN SEL KOSONG
+MYSG CORE MODULE - PENGIRAAN TAPAK ASAS (BASE) + PDP
 ========================================================================
 """
 
@@ -29,31 +29,31 @@ JAWATAN_RASMI_KPM = [
     "PEMBANTU PENGURUSAN MURID", "JURUTEKNIK KOMPUTER", "PEMBANTU OPERASI"
 ]
 
-# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH RENDAH (DIBETULKAN MENGIKUT MYSG RASMI)
+# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH RENDAH (DILARAS DENGAN TAPAK ASAS PENGURUSAN/RUTIN)
 MYSG_PORTFOLIO_H_SR = {
-    "HR01": ("Guru Besar (PGB)", 0.0),
-    "HR02": ("Guru Penolong Kanan Pentadbiran", 0.0),
-    "HR03": ("Guru Penolong Kanan Hal Ehwal Murid", 0.0),
-    "HR04": ("Guru Penolong Kanan Kokurikulum", 0.0),
-    "HR05": ("Guru Penolong Kanan Petang", 0.0),
-    "HR06": ("Guru Penolong Kanan Pendidikan Khas", 0.0),
-    "HR07": ("Penyelaras Aktiviti Menengah (Model Khas K9)", 0.0),
-    "HR08": ("Guru Penyelaras Bestari", 0.0),
-    "HR09": ("Guru Perpustakaan dan Media (GPM)", 0.0),
-    "HR10": ("Guru Data", 0.0),
-    "HR11": ("Guru Prasekolah", 0.0),
-    "HR12": ("Guru Akademik KSSR", 0.0),
-    "HR13": ("Guru Akademik KSSM (K9)", 0.0),
-    "HR14": ("Guru Amali (K9)", 0.0),
-    "HR15": ("Guru Bahasa Cina", 0.0),
-    "HR16": ("Guru Bahasa Tamil", 0.0),
-    "HR17": ("Guru Pendidikan Islam", 0.0),
-    "HR18": ("Guru Pemulihan / Pemulihan Khas", 0.0),
-    "HR19": ("Guru Program Integrasi / Pendidikan Khas (PPKI)", 0.0),
-    "HR20": ("Guru Kod Braille", 0.0),
-    "HR21": ("Guru Kod Tangan", 0.0),
-    "HR22": ("Guru Bimbingan (GBK)", 0.0),
-    "HR23": ("Guru Kaunseling (K9)", 0.0),
+    "HR01": ("Guru Besar (PGB)", 37.5),
+    "HR02": ("Guru Penolong Kanan Pentadbiran", 34.0),
+    "HR03": ("Guru Penolong Kanan Hal Ehwal Murid", 34.0),
+    "HR04": ("Guru Penolong Kanan Kokurikulum", 34.0),
+    "HR05": ("Guru Penolong Kanan Petang", 34.0),
+    "HR06": ("Guru Penolong Kanan Pendidikan Khas", 34.0),
+    "HR07": ("Penyelaras Aktiviti Menengah (Model Khas K9)", 34.0),
+    "HR08": ("Guru Penyelaras Bestari", 28.0),
+    "HR09": ("Guru Perpustakaan dan Media (GPM)", 28.0),
+    "HR10": ("Guru Data", 28.0),
+    "HR11": ("Guru Prasekolah", 20.0),
+    "HR12": ("Guru Akademik KSSR", 20.0),
+    "HR13": ("Guru Akademik KSSM (K9)", 20.0),
+    "HR14": ("Guru Amali (K9)", 20.0),
+    "HR15": ("Guru Bahasa Cina", 20.0),
+    "HR16": ("Guru Bahasa Tamil", 20.0),
+    "HR17": ("Guru Pendidikan Islam", 20.0),
+    "HR18": ("Guru Pemulihan / Pemulihan Khas", 20.0),
+    "HR19": ("Guru Program Integrasi / Pendidikan Khas (PPKI)", 20.0),
+    "HR20": ("Guru Kod Braille", 20.0),
+    "HR21": ("Guru Kod Tangan", 20.0),
+    "HR22": ("Guru Bimbingan (GBK)", 38.0), # GBK biasanya tiada waktu PdP standard, diset ke 38.0 jam penuh
+    "HR23": ("Guru Kaunseling (K9)", 38.0),
     "HR24": ("Pembantu Tadbir (P/O)", 40.0),
     "HR25": ("Pembantu Tadbir (Kewangan)", 40.0),
     "HR26": ("Juruteknik Komputer", 40.0),
@@ -70,60 +70,60 @@ MYSG_PORTFOLIO_H_SR = {
     "HR37": ("Pembantu Kemahiran (SKPK)", 40.0)
 }
 
-# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH MENENGAH (DIBETULKAN MENGIKUT MYSG RASMI)
+# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH MENENGAH (DILARAS DENGAN TAPAK ASAS PENGURUSAN/RUTIN)
 MYSG_PORTFOLIO_H_SM = {
-    "HM01": ("Pengetua (PGB)", 0.0),
-    "HM02": ("Guru Penolong Kanan Pentadbiran", 0.0),
-    "HM03": ("Guru Penolong Kanan Hal Ehwal Murid", 0.0),
-    "HM04": ("Guru Penolong Kanan Kokurikulum", 0.0),
-    "HM05": ("Guru Penolong Kanan Petang", 0.0),
-    "HM06": ("Guru Penolong Kanan Pendidikan Khas", 0.0),
-    "HM07": ("GPK Sukan (SSM)", 0.0),
-    "HM08": ("GPK Seni (SSeM)", 0.0),
-    "HM09": ("GPK Rendah (Model Khas)", 0.0),
-    "HM10": ("GPK Tingkatan 6", 0.0),
-    "HM11": ("GPK Prauniversiti (SSM)", 0.0),
-    "HM12": ("Guru Kanan Mata Pelajaran (GKMP)", 0.0),
-    "HM13": ("Ketua Bidang Sukan (SSM)", 0.0),
-    "HM14": ("Ketua Bidang Seni (SSeM)", 0.0),
-    "HM15": ("Guru Penyelaras Bestari", 0.0),
-    "HM16": ("Guru Perpustakaan dan Media (GPM)", 0.0),
-    "HM17": ("Guru Data", 0.0),
-    "HM18": ("Guru Tingkatan 6 Akademik", 0.0),
-    "HM19": ("Guru Tingkatan 6 Amali", 0.0),
-    "HM20": ("Guru Tingkatan 6 Kokurikulum", 0.0),
-    "HM21": ("Guru Prauniversiti Akademik (SSM)", 0.0),
-    "HM22": ("Guru Prauniversiti Amali (SSM)", 0.0),
-    "HM23": ("Guru Prauniversiti Kokurikulum (SSM)", 0.0),
-    "HM24": ("Guru Akademik KSSM", 0.0),
-    "HM25": ("Guru Akademik KSSR (Model Khas/SSM)", 0.0),
-    "HM26": ("Guru MP Am (SMT)", 0.0),
-    "HM27": ("Guru KBT (SABKM/TMUA)", 0.0),
-    "HM28": ("Guru KBD (SABKM)", 0.0),
-    "HM29": ("Guru Pendidikan Islam SR (Model Khas)", 0.0),
-    "HM30": ("Guru Pendidikan Islam (SBP/SSM/SSeM)", 0.0),
-    "HM31": ("Guru Dini", 0.0),
-    "HM32": ("Guru Tahfiz", 0.0),
-    "HM33": ("Guru al-Quran (KKQ)", 0.0),
-    "HM34": ("Guru Bahasa Antarabangsa", 0.0),
-    "HM35": ("Guru Bahasa Inggeris (SBP/SSM/SSeM)", 0.0),
-    "HM36": ("Guru Muzik (SBP)", 0.0),
-    "HM37": ("Guru Psikologi Sukan (SSM)", 0.0),
-    "HM38": ("Guru Unit Sains Sukan (SSM)", 0.0),
-    "HM39": ("Guru Program Integrasi / Pendidikan Khas (PPKI)", 0.0),
-    "HM40": ("Guru Kod Braille", 0.0),
-    "HM41": ("Guru Kod Tangan", 0.0),
-    "HM42": ("Guru Amali Bengkel (Ting. 1-3)", 0.0),
-    "HM43": ("Guru Amali (Ting. 4-5)", 0.0),
-    "HM44": ("Guru MP Teknikal (SMT)", 0.0),
-    "HM45": ("Guru MP Vokasional ICT", 0.0),
-    "HM46": ("Guru MP Vokasional Rekacipta", 0.0),
-    "HM47": ("Guru MP Vokasional (MPV)", 0.0),
-    "HM48": ("Jurulatih Sukan Terbuka (SSM)", 0.0),
-    "HM49": ("Jurulatih Sukan Tertutup (SSM)", 0.0),
-    "HM50": ("Jurulatih Sukan (SSN)", 0.0),
-    "HM51": ("Jurulatih Seni Terbuka (SSeM)", 0.0),
-    "HM52": ("Guru Kaunseling / Guru Bimbingan", 0.0),
+    "HM01": ("Pengetua (PGB)", 37.5),
+    "HM02": ("Guru Penolong Kanan Pentadbiran", 34.0),
+    "HM03": ("Guru Penolong Kanan Hal Ehwal Murid", 34.0),
+    "HM04": ("Guru Penolong Kanan Kokurikulum", 34.0),
+    "HM05": ("Guru Penolong Kanan Petang", 34.0),
+    "HM06": ("Guru Penolong Kanan Pendidikan Khas", 34.0),
+    "HM07": ("GPK Sukan (SSM)", 34.0),
+    "HM08": ("GPK Seni (SSeM)", 34.0),
+    "HM09": ("GPK Rendah (Model Khas)", 34.0),
+    "HM10": ("GPK Tingkatan 6", 34.0),
+    "HM11": ("GPK Prauniversiti (SSM)", 34.0),
+    "HM12": ("Guru Kanan Mata Pelajaran (GKMP)", 30.0),
+    "HM13": ("Ketua Bidang Sukan (SSM)", 30.0),
+    "HM14": ("Ketua Bidang Seni (SSeM)", 30.0),
+    "HM15": ("Guru Penyelaras Bestari", 28.0),
+    "HM16": ("Guru Perpustakaan dan Media (GPM)", 28.0),
+    "HM17": ("Guru Data", 28.0),
+    "HM18": ("Guru Tingkatan 6 Akademik", 20.0),
+    "HM19": ("Guru Tingkatan 6 Amali", 20.0),
+    "HM20": ("Guru Tingkatan 6 Kokurikulum", 20.0),
+    "HM21": ("Guru Prauniversiti Akademik (SSM)", 20.0),
+    "HM22": ("Guru Prauniversiti Amali (SSM)", 20.0),
+    "HM23": ("Guru Prauniversiti Kokurikulum (SSM)", 20.0),
+    "HM24": ("Guru Akademik KSSM", 20.0),
+    "HM25": ("Guru Akademik KSSR (Model Khas/SSM)", 20.0),
+    "HM26": ("Guru MP Am (SMT)", 20.0),
+    "HM27": ("Guru KBT (SABKM/TMUA)", 20.0),
+    "HM28": ("Guru KBD (SABKM)", 20.0),
+    "HM29": ("Guru Pendidikan Islam SR (Model Khas)", 20.0),
+    "HM30": ("Guru Pendidikan Islam (SBP/SSM/SSeM)", 20.0),
+    "HM31": ("Guru Dini", 20.0),
+    "HM32": ("Guru Tahfiz", 20.0),
+    "HM33": ("Guru al-Quran (KKQ)", 20.0),
+    "HM34": ("Guru Bahasa Antarabangsa", 20.0),
+    "HM35": ("Guru Bahasa Inggeris (SBP/SSM/SSeM)", 20.0),
+    "HM36": ("Guru Muzik (SBP)", 20.0),
+    "HM37": ("Guru Psikologi Sukan (SSM)", 20.0),
+    "HM38": ("Guru Unit Sains Sukan (SSM)", 20.0),
+    "HM39": ("Guru Program Integrasi / Pendidikan Khas (PPKI)", 20.0),
+    "HM40": ("Guru Kod Braille", 20.0),
+    "HM41": ("Guru Kod Tangan", 20.0),
+    "HM42": ("Guru Amali Bengkel (Ting. 1-3)", 20.0),
+    "HM43": ("Guru Amali (Ting. 4-5)", 20.0),
+    "HM44": ("Guru MP Teknikal (SMT)", 20.0),
+    "HM45": ("Guru MP Vokasional ICT", 20.0),
+    "HM46": ("Guru MP Vokasional Rekacipta", 20.0),
+    "HM47": ("Guru MP Vokasional (MPV)", 20.0),
+    "HM48": ("Jurulatih Sukan Terbuka (SSM)", 20.0),
+    "HM49": ("Jurulatih Sukan Tertutup (SSM)", 20.0),
+    "HM50": ("Jurulatih Sukan (SSN)", 20.0),
+    "HM51": ("Jurulatih Seni Terbuka (SSeM)", 20.0),
+    "HM52": ("Guru Kaunseling / Guru Bimbingan", 38.0),
     "HM53": ("Pembantu Tadbir (P/O)", 40.0),
     "HM54": ("Pembantu Tadbir (Kewangan)", 40.0),
     "HM55": ("Juruteknik Komputer", 40.0),
@@ -222,7 +222,7 @@ def determine_kategori_staf(row):
     if (kod_h.startswith('HR') or kod_h.startswith('HM')):
         try:
             num_code = int(kod_h.replace('HR', '').replace('HM', '').strip())
-            if num_code < 24: # Dibetulkan kepada < 24 untuk merangkumi kod guru HR01-HR23
+            if num_code < 24:
                 return 'Guru'
         except ValueError:
             pass
@@ -236,7 +236,6 @@ def is_empty_val(val):
 def extract_code(val):
     if is_empty_val(val):
         return ""
-    # Extract just the code part like PR01 or JR01 before the pipe |
     return str(val).split('|')[0].strip().upper()
 
 def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
@@ -248,10 +247,9 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
     kadar_pdp_jam = 40.0 / 60.0 if is_sm else 30.0 / 60.0
     mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
 
-    # 1. Setkan lajur Kumpulan sahaja
+    # 1. Setkan lajur Kumpulan
     df_out['Kumpulan'] = df_out.apply(determine_kategori_staf, axis=1)
 
-    # Padamkan lajur Kategori_Staf jika wujud dari fail lama
     if 'Kategori_Staf' in df_out.columns:
         df_out.drop(columns=['Kategori_Staf'], inplace=True)
 
@@ -266,7 +264,7 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
         df_out['JUMLAH_WAKTU_PDP'] = 0
         df_out['JUMLAH_JAM_PDP'] = 0.0
 
-    # 3. Hitung Jam Portfolio H
+    # 3. Hitung Jam Portfolio H (Menggunakan Tapak Asas)
     def get_jam_h(row):
         kod_raw = extract_code(row.get('Kod_H_1', ''))
         if kod_raw in mapping_h:
@@ -283,13 +281,10 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
             kod_raw = str(row.get(pc, '')).strip()
             if is_empty_val(kod_raw):
                 continue
-            # Jika ia ada kod seperti PR01 dalam MYSG_PORTFOLIO_P
-            # Convert PR01 -> P01 for dictionary matching
             mapped_kod = kod_raw.split('|')[0].strip().upper().replace('PR', 'P').replace('PM', 'P')
             if mapped_kod in MYSG_PORTFOLIO_P:
                 total_p += MYSG_PORTFOLIO_P[mapped_kod][1]
             elif mapped_kod:
-                # Fallback: if there is some valid non-empty text, give default 1.5 jam
                 total_p += 1.5
         return total_p
 
@@ -303,18 +298,16 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
             kod_raw = str(row.get(jc, '')).strip()
             if is_empty_val(kod_raw):
                 continue
-            # If it's something like PR06 that leaked into Kod J, don't count it or give fallback
             mapped_kod = kod_raw.split('|')[0].strip().upper().replace('JR', 'J').replace('JM', 'J')
             if mapped_kod in MYSG_JAWATANKUASA_J:
                 total_j += MYSG_JAWATANKUASA_J[mapped_kod][1]
             elif mapped_kod:
-                # Only add if it's a valid non-empty string that isn't found
                 total_j += 1.0
         return total_j
 
     df_out['JUMLAH_JAM_JAWATANKUASA'] = df_out.apply(get_jam_j, axis=1) if j_cols else 0.0
 
-    # 6. Hitung Jumlah Beban Keseluruhan
+    # 6. Hitung Jumlah Beban Keseluruhan (Gabungan PdP + Tapak Asas + P + J)
     df_out['JUMLAH_BEBAN_KESELURAHAN'] = (
         df_out['JUMLAH_JAM_PDP'] +
         df_out['JUMLAH_JAM_PORTFOLIO_H'] +
@@ -322,7 +315,7 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
         df_out['JUMLAH_JAM_JAWATANKUASA']
     )
 
-    # 7. SUSUN LAJUR: SELIPKAN 'Kumpulan' TEPAT SELEPAS 'No_KP'
+    # 7. Susun Semula
     cols = list(df_out.columns)
     if 'Kumpulan' in cols:
         cols.remove('Kumpulan')
