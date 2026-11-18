@@ -7,9 +7,21 @@ MYSG KPM: MODUL PENJANAAN LAPORAN BANDINGAN KESELURUHAN (A4 LANDSCAPE)
 import pandas as pd
 from datetime import datetime
 from letterhead_template import get_official_letterhead, get_a4_print_css
+from mysg_core import MYSG_PORTFOLIO_H_SM, MYSG_PORTFOLIO_H_SR, MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
+
+# FUNGSI HELPER UNTUK MEMAKSA AMBIL NILAI TAPAK ASAS
+def force_get_h_base_hours(row, jenis_sekolah="Sekolah Rendah"):
+    jam_h = row.get('JUMLAH_JAM_PORTFOLIO_H', None)
+    if pd.notna(jam_h) and float(jam_h) > 0:
+        return float(jam_h)
+    
+    is_sm = "Menengah" in str(jenis_sekolah)
+    mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
+    kod_h_raw = str(row.get('Kod_H_1', '')).split('|')[0].strip().upper()
+    return mapping_h.get(kod_h_raw, ('', 0.0))[1]
 
 def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESELURUHAN WARGA SEKOLAH", school_info=None, session_state=None, *args, **kwargs):
-    """Menjana LAPORAN BEBAN KERJA KESELURUHAN mengikut Pengelompokan Kumpulan Kakitangan & Nota MySG (A4 Landscape)."""
+    """Menjana LAPORAN BEBAN KERJA KESELURUHAN (Ambang 45 Jam JPA)."""
     if isinstance(title, dict):
         school_info = title
         title = "LAPORAN BEBAN KERJA KESELURUHAN WARGA SEKOLAH"
@@ -22,6 +34,7 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
 
     header_html = get_official_letterhead(school_info)
     css_theme = get_a4_print_css(orientation='landscape')
+    jenis_sek = school_info.get('jenis_sekolah', 'Sekolah Rendah')
 
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR SANDAKAN')).upper()
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
@@ -34,13 +47,14 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
 
     if isinstance(df_staff, pd.DataFrame) and not df_staff.empty:
         jumlah_rekod = len(df_staff)
-        
         df_calc = df_staff.copy()
+        
+        # PENGIRAAN SEMULA UNTUK MEMASTIKAN NILAI TAPAK ASAS DIAMBIL
         df_calc['Jam_PdP'] = df_calc.get('JUMLAH_JAM_PDP', 0.0).astype(float)
-        df_calc['Jam_Port_H'] = df_calc.get('JUMLAH_JAM_PORTFOLIO_H', 0.0).astype(float)
+        df_calc['Jam_Port_H'] = df_calc.apply(lambda row: force_get_h_base_hours(row, jenis_sek), axis=1)
         df_calc['Jam_Port_P'] = df_calc.get('JUMLAH_JAM_PORTFOLIO_P', 0.0).astype(float)
         df_calc['Jam_JK'] = df_calc.get('JUMLAH_JAM_JAWATANKUASA', 0.0).astype(float)
-        df_calc['Jam_Total'] = df_calc.get('JUMLAH_BEBAN_KESELURAHAN', df_calc['Jam_PdP'] + df_calc['Jam_Port_H'] + df_calc['Jam_Port_P'] + df_calc['Jam_JK']).astype(float)
+        df_calc['Jam_Total'] = df_calc['Jam_PdP'] + df_calc['Jam_Port_H'] + df_calc['Jam_Port_P'] + df_calc['Jam_JK']
 
         def classify_group(row):
             jawatan = str(row.get('Jawatan', '')).upper()
@@ -56,7 +70,6 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
 
         df_calc['Kategori_Kumpulan'] = df_calc.apply(classify_group, axis=1)
         groups = sorted(df_calc['Kategori_Kumpulan'].unique())
-        
         global_counter = 1
 
         for grp in groups:
@@ -67,12 +80,9 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
             jk_avg = round(sub_df['Jam_JK'].mean(), 1)
             tot_avg = round(sub_df['Jam_Total'].mean(), 1)
 
-            if 'AKP' in grp:
-                ideal_pct = round((len(sub_df[(sub_df['Jam_Total'] >= 35.0) & (sub_df['Jam_Total'] <= 45.0)]) / count) * 100, 1)
-                status_grp = "🟢 OPTIMUM (OPERASI)"
-            else:
-                ideal_pct = round((len(sub_df[(sub_df['Jam_Total'] >= 20.0) & (sub_df['Jam_Total'] <= 32.0)]) / count) * 100, 1)
-                status_grp = "🟢 SEIMBANG (MYSG)" if ideal_pct >= 75 else "🟡 OPTIMUM"
+            # JULAT IDEAL BAHARU SELARAS JPA (37.0 - 45.0 Jam)
+            ideal_pct = round((len(sub_df[(sub_df['Jam_Total'] >= 37.0) & (sub_df['Jam_Total'] <= 45.0)]) / count) * 100, 1)
+            status_grp = "🟢 SEIMBANG (MYSG)" if ideal_pct >= 50 else "🟡 PERLU SELARAS"
 
             kpi_rows_html += f"""
             <tr>
@@ -107,12 +117,13 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
                 jam_jk = round(row['Jam_JK'], 1)
                 total = round(row['Jam_Total'], 1)
 
-                if total > 35.0:
+                # AMBANG STATUS BAHARU SELARAS JPA 45 JAM
+                if total > 45.0:
                     status_agihan = "<span style='color: #8b0000; font-weight: bold;'>🔴 TINGGI</span>"
-                elif total >= 20.0:
+                elif total >= 37.0:
                     status_agihan = "<span style='color: #2e7d32; font-weight: bold;'>🟢 SEIMBANG</span>"
                 else:
-                    status_agihan = "<span style='color: #f57c00; font-weight: bold;'>🟡 OPTIMUM</span>"
+                    status_agihan = "<span style='color: #1e429f; font-weight: bold;'>🔵 RINGAN</span>"
 
                 grouped_rows_html += f"""
                 <tr>
@@ -206,15 +217,6 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
                 padding: 3px 5px;
             }}
 
-            .note-box {{
-                border: 1px solid #777;
-                padding: 6px 8px;
-                font-size: 7.5pt;
-                line-height: 1.3;
-                background-color: #fafafa;
-                margin-top: 10px;
-            }}
-
             .print-footer-container {{
                 margin-top: 12px;
                 border-top: 1px solid #ccc;
@@ -278,27 +280,25 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
         </table>
 
         <!-- KOTAK GABUNGAN LENGKAP KETETAPAN MYSG KPM -->
-<div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222;">
-    <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px; text-transform: uppercase;">
-        📌 KETETAPAN & GARIS PANDUAN PENETAPAN BEBAN KERJA WARGA SEKOLAH (MYSG KPM):
-    </div>
-    
-    <!-- ASAS PENGIRAAN & PRINSIP -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; margin-bottom: 4px; font-weight: 500;">
-        <div>• <b>Asas Pengiraan PdP:</b> 1 Waktu PdP = 0.5 Jam (30 Minit)</div>
-        <div>• <b>Portfolio Hakiki (Kod H):</b> Berdasarkan Deskripsi Tugas Jawatan Rasmi</div>
-        <div>• <b>Beban Kerja Seimbang:</b> 20.0 – 32.0 Jam/Minggu (PPP) / 40.0 Jam (AKP)</div>
-        <div>• <b>Prinsip Kesaksamaan:</b> Agihan Portfolio (P) & JK (J) dilaksanakan secara adil mengikut purata kumpulan</div>
-    </div>
+        <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222; page-break-inside: avoid;">
+            <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px; text-transform: uppercase;">
+                📌 KETETAPAN & GARIS PANDUAN PENETAPAN BEBAN KERJA WARGA SEKOLAH (MYSG KPM):
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; margin-bottom: 4px; font-weight: 500;">
+                <div>• <b>Asas Pengiraan PdP:</b> 1 Waktu PdP = 0.5 Jam (30 Minit) SR / 0.667 Jam (40 Minit) SM</div>
+                <div>• <b>Portfolio Hakiki (Kod H):</b> Penambahan masa pengurusan/persediaan asas</div>
+                <div>• <b>Beban Kerja Seimbang:</b> 37.0 – 45.0 Jam/Minggu (Berdasarkan 45 Jam JPA)</div>
+                <div>• <b>Prinsip Kesaksamaan:</b> Agihan Portfolio (P) & JK (J) dilaksanakan secara adil</div>
+            </div>
 
-    <!-- KETETAPAN MENGIKUT KUMPULAN STAF -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px;">
-        <div>• <b>1. Pentadbir:</b> PdP minimum (3.0–6.0 Jam/Minggu). Fokus Portfolio Hakiki (Kod H) & Kepimpinan JK (Kod J).</div>
-        <div>• <b>2. Guru Akademik:</b> Beban seimbang 20.0–32.0 Jam/Minggu (PdP + Portfolio H/P + Maksimum 3–5 Kod J).</div>
-        <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP diberi bagi menampung peruntukan masa pengurusan hakiki.</div>
-        <div>• <b>4. AKP:</b> Masa kerja rasmi operasi pejabat (40.0 Jam/Minggu) tanpa PdP. Penglibatan JK dihadkan (Maksimum 1–2 Kod J).</div>
-    </div>
-</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px;">
+                <div>• <b>1. Pentadbir:</b> Beban optimum (38–45 Jam) dinilai melalui kepimpinan Kod J & H.</div>
+                <div>• <b>2. Guru Akademik:</b> Lebihan beban > 45 Jam perlu diagihkan semula tugas Kod P & J.</div>
+                <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP untuk menampung pengurusan hakiki.</div>
+                <div>• <b>4. AKP:</b> Waktu rasmi (40 Jam). Lebihan masa luar pejabat tertakluk syarat.</div>
+            </div>
+        </div>
 
         <div class="print-footer-container">
             <div><i>Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: <b>{tarikh_cetak}</b></i></div>
