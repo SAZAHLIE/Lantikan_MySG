@@ -5,7 +5,6 @@ MYSG KPM: MODUL PENJANAAN SURAT LANTIKAN & LAPORAN INDIVIDU (A4 PORTRAIT)
 """
 
 import pandas as pd
-import re
 from datetime import datetime
 from letterhead_template import (
     get_official_letterhead, 
@@ -29,6 +28,7 @@ def get_malay_official_date():
 # HELPER FUNCTION: EKSTRAK DATA TERUS DARI LAJUR CSV 
 # -------------------------------------------------------------------
 def extract_pdp_from_row(staf_row):
+    """Menyemak dan membina senarai PdP terus dari lajur CSV Subjek_1 hingga Subjek_15"""
     new_list = []
     for i in range(1, 16):
         subjek = staf_row.get(f'Subjek_{i}')
@@ -39,43 +39,57 @@ def extract_pdp_from_row(staf_row):
     return new_list
 
 def extract_portfolio_from_row(staf_row):
+    """Menyemak dan membina senarai Portfolio (P) terus dari lajur Kod_P_1 hingga Kod_P_15"""
     new_list = []
     for i in range(1, 16):
         kod = staf_row.get(f'Kod_P_{i}')
         if pd.notna(kod) and str(kod).strip() != '' and str(kod).strip() != '0':
             perincian = staf_row.get(f'Detail_P_{i}', '-')
+            
+            # Cari pemberat jam dari pangkalan data MYSG_PORTFOLIO_P
             kod_raw = str(kod).split('|')[0].strip().upper().replace('PR', 'P').replace('PM', 'P')
             jam_val = MYSG_PORTFOLIO_P.get(kod_raw, ('', 1.5))[1]
+            
             new_list.append({'kod': str(kod).strip(), 'perincian': str(perincian).strip(), 'jam': jam_val})
     return new_list
 
 def extract_jk_from_row(staf_row):
+    """Menyemak dan membina senarai Jawatankuasa (J) terus dari lajur Kod_J_1 hingga Kod_J_15"""
     new_list = []
     for i in range(1, 16):
         kod = staf_row.get(f'Kod_J_{i}')
         if pd.notna(kod) and str(kod).strip() != '' and str(kod).strip() != '0':
             perincian = staf_row.get(f'Detail_J_{i}', '-')
+            
+            # Cari pemberat jam dari pangkalan data MYSG_JAWATANKUASA_J
             kod_raw = str(kod).split('|')[0].strip().upper().replace('JR', 'J').replace('JM', 'J')
             jam_val = MYSG_JAWATANKUASA_J.get(kod_raw, ('', 1.0))[1]
+            
             new_list.append({'kod': str(kod).strip(), 'perincian': str(perincian).strip(), 'jam': jam_val})
     return new_list
 
-def get_h_portfolio_base_hours(staf_row, jenis_sekolah="Sekolah Rendah"):
-    """Dapatkan nilai jam 'Tapak Asas' bagi Portfolio Hakiki (Kod H) dari pangkalan data."""
+# -------------------------------------------------------------------
+# PENYELESAIAN TERUS UNTUK MENDAPATKAN JAM HAKIKI (KOD H)
+# -------------------------------------------------------------------
+def force_get_h_base_hours(staf_row, jenis_sekolah="Sekolah Rendah"):
+    """
+    Memaksa pengambilan nilai jam dengan merujuk terus kepada nilai yang
+    dikira oleh mysg_core.py supaya tiada ralat pemadanan (mismatch).
+    """
+    # 1. Cuba cari nilai yang telah dikira terus di dalam DataFrame
+    jam_h = staf_row.get('JUMLAH_JAM_PORTFOLIO_H', None)
+    if pd.notna(jam_h) and float(jam_h) > 0:
+        return float(jam_h)
+        
+    # 2. Jika tiada, kita ambil dari kamus (dictionary)
     is_sm = "Menengah" in str(jenis_sekolah)
     mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
     
     kod_h_raw = str(staf_row.get('Kod_H_1', '')).split('|')[0].strip().upper()
-    
-    # PENGECAMAN PINTAR: Fallback jika Kod_H_1 kosong tetapi wujud dalam lajur Jawatan
-    if kod_h_raw in ["", "NAN", "NONE", "NULL", "-"]:
-        m = re.search(r'(HR|HM)(\d{2})', str(staf_row.get('Jawatan', '')))
-        if m:
-            kod_h_raw = f"{m.group(1)}{m.group(2)}"
-            
     return mapping_h.get(kod_h_raw, ('', 0.0))[1]
 
 def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
+    """Menjana HTML Surat Lantikan Tugas Rasmi."""
     if not isinstance(school_info, dict):
         school_info = {}
 
@@ -103,6 +117,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     tarikh_rasmi = get_malay_official_date()
     jawatan_hakiki = str(staf_row.get('Kod_H_1', staf_row.get('Jawatan', 'HR24 | PEMBANTU TADBIR (P/O)'))).strip()
 
+    # 1. PDP LIST (2.1.X) (DIKEMASKINI DENGAN HELPER)
     pdp_html_list = ""
     pdp_list = extract_pdp_from_row(staf_row)
     if len(pdp_list) > 0:
@@ -114,6 +129,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     else:
         pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.1. Tiada Rekod Pengajaran (PdP)</div>"
 
+    # 2. PORTFOLIO TANPA JAWATAN (2.2.X) (DIKEMASKINI DENGAN HELPER)
     p_html_list = ""
     p_list = extract_portfolio_from_row(staf_row)
     if len(p_list) > 0:
@@ -124,6 +140,7 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     else:
         p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.1. Tiada Portfolio Ditetapkan</div>"
 
+    # 3. JAWATANKUASA (2.3.X) (DIKEMASKINI DENGAN HELPER)
     j_html_list = ""
     j_list = extract_jk_from_row(staf_row)
     if len(j_list) > 0:
@@ -346,24 +363,15 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
 
     kod_h = str(staf_row.get('Kod_H_1', '')).split('|')[0].strip().upper()
     detail_h = str(staf_row.get('Detail_H_1', '')).upper()
-    
-    # PENGECAMAN PINTAR UNTUK PAPARAN TAJUK
-    if kod_h in ["", "NAN", "NONE", "NULL", "-"]:
-        m = re.search(r'(HR|HM)(\d{2})', str(staf_row.get('Jawatan', '')))
-        if m:
-            kod_h = f"{m.group(1)}{m.group(2)}"
-            # Sekadar estetik sekiranya nama jawatan ada di CSV
-            detail_h = str(staf_row.get('Jawatan', '')).replace(kod_h, '').replace('|', '').strip().upper()
-
-    jawatan_hakiki = f"{kod_h} | {detail_h}" if (kod_h and kod_h not in ["NAN", "NONE", ""]) else str(staf_row.get('Jawatan', 'HR12 | Guru Akademik KSSR'))
+    jawatan_hakiki = f"{kod_h} | {detail_h}" if kod_h else str(staf_row.get('Jawatan', 'HR12 | Guru Akademik KSSR'))
     
     kump_staf = str(staf_row.get('Kumpulan', 'Guru')).strip()
     tahun_sesi = str(school_info.get('tahun_sesi', '2027'))
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
-    tarikh_hari = datetime.now().strftime("%d/%m/%Y")
+    tarikh_hari = datetime.now().strftime("%d/%m/%Y %I:%M %p")
 
-    # MENDAPATKAN NILAI JAM TAPAK ASAS DARI PANGKALAN DATA (FUNGSI HELPER)
-    jam_tapak_asas = get_h_portfolio_base_hours(staf_row, jenis_sek)
+    # MENDAPATKAN NILAI JAM TAPAK ASAS DENGAN PENYELESAIAN TERUS (FORCE-FETCH)
+    jam_tapak_asas = force_get_h_base_hours(staf_row, jenis_sek)
 
     # JUMLAH KESELURUHAN & PURATA
     total_jam = round(float(staf_row.get('JUMLAH_BEBAN_KESELURAHAN', 27.0) or 0.0), 1)
@@ -382,4 +390,341 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     diff_text = f"+{diff_jam} jam dari purata" if diff_jam >= 0 else f"{diff_jam} jam dari purata"
     color_diff = "#d9534f" if diff_jam > 0 else "#2e7d32"
 
-    if total_jam > 35.0 if 'AKP' in kump_staf.upper() or 'PELAKSANA' in kump_staf
+    if total_jam > 35.0 if 'AKP' in kump_staf.upper() or 'PELAKSANA' in kump_staf.upper() else total_jam > 32.0:
+        badge_status = '<span style="background-color: #fde8e8; color: #9b1c1c; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🔴 TINGGI</span>'
+    elif total_jam >= 20.0:
+        badge_status = '<span style="background-color: #def7ec; color: #03543f; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🟢 SEIMBANG (IDEAL)</span>'
+    else:
+        badge_status = '<span style="background-color: #e1effe; color: #1e429f; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🔵 RINGAN</span>'
+
+    # PAPARAN KOD H & PDP
+    rows_h_html = f"""
+    <tr style="background-color: #fafafa;">
+        <td style="padding-left: 12px;">• &nbsp; <b>{jawatan_hakiki}</b> <span style="color: #666; font-size: 7.5pt;">(Masa Pengurusan Hakiki / Persediaan)</span></td>
+        <td style="text-align: right; font-weight: bold; width: 20%; color: #0f4c81;">{jam_tapak_asas:.1f} jam</td>
+    </tr>
+    """
+    
+    pdp_list = extract_pdp_from_row(staf_row)
+    kadar_pdp_jam = 40.0 / 60.0 if "Menengah" in jenis_sek else 30.0 / 60.0
+
+    if len(pdp_list) > 0:
+        for idx_p, item in enumerate(pdp_list):
+            subjek = item.get('subjek', '-')
+            kelas = item.get('kelas', '-')
+            waktu = item.get('waktu', '2')
+            try: 
+                jam_val = round(float(waktu) * kadar_pdp_jam, 1)
+            except: 
+                jam_val = 0.0
+                
+            bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
+            rows_h_html += f"""
+            <tr style="background-color: {bg_color};">
+                <td style="padding-left: 12px;">• &nbsp; {subjek} ({kelas}) • <i style="color: #555;">{waktu} Waktu</i></td>
+                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jam_val:.1f} jam</td>
+            </tr>
+            """
+    else:
+        rows_h_html += f"""
+        <tr style="background-color: #ffffff;">
+            <td style="padding-left: 12px; color: #888;">• &nbsp; <i>Tiada Rekod Pengajaran (PdP) Ditetapkan</i></td>
+            <td style="text-align: right; font-weight: bold; color: #888;">0.0 jam</td>
+        </tr>
+        """
+
+    # PAPARAN PORTFOLIO KOD P
+    rows_p_html = ""
+    p_list = extract_portfolio_from_row(staf_row)
+    if len(p_list) > 0:
+        for idx_p, item in enumerate(p_list):
+            kod_p = item.get('kod', 'P')
+            perincian_p = item.get('perincian', '-')
+            jam_val = round(float(item.get('jam', 1.5)), 1)
+            bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
+            rows_p_html += f"""
+            <tr style="background-color: {bg_color};">
+                <td style="padding-left: 12px;">• &nbsp; <b>{kod_p}</b> | {perincian_p}</td>
+                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jam_val:.1f} jam</td>
+            </tr>
+            """
+    else:
+        rows_p_html += f"""
+        <tr style="background-color: #ffffff;">
+            <td style="padding-left: 12px; color: #888;">• &nbsp; <i>Tiada Portfolio (P) Ditetapkan</i></td>
+            <td style="text-align: right; font-weight: bold; color: #888;">0.0 jam</td>
+        </tr>
+        """
+
+    # PAPARAN JAWATANKUASA KOD J
+    rows_j_html = ""
+    j_list = extract_jk_from_row(staf_row)
+    if len(j_list) > 0:
+        for idx_j, item in enumerate(j_list):
+            kod_j = item.get('kod', 'J')
+            perincian_j = item.get('perincian', '-')
+            jam_val = round(float(item.get('jam', 1.0)), 1)
+            bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
+            rows_j_html += f"""
+            <tr style="background-color: {bg_color};">
+                <td style="padding-left: 12px;">• &nbsp; <b>{kod_j}</b> | {perincian_j}</td>
+                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jam_val:.1f} jam</td>
+            </tr>
+            """
+    else:
+        rows_j_html += f"""
+        <tr style="background-color: #ffffff;">
+            <td style="padding-left: 12px; color: #888;">• &nbsp; <i>Tiada Jawatankuasa (J) Ditetapkan</i></td>
+            <td style="text-align: right; font-weight: bold; color: #888;">0.0 jam</td>
+        </tr>
+        """
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="ms">
+    <head>
+        <meta charset="UTF-8">
+        <title>Laporan Perincian Beban Tugas Individu - {nama}</title>
+        <style>
+            {css_theme}
+            
+            @page {{
+                size: A4 portrait;
+                margin: 0.5cm 1.0cm 0.5cm 1.0cm;
+            }}
+
+            html, body {{
+                height: 100%;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 8.5pt;
+                color: #222;
+                margin: 0;
+                padding: 0;
+            }}
+
+            .page-container {{
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                min-height: 98vh;
+                box-sizing: border-box;
+                page-break-inside: avoid;
+            }}
+
+            .doc-title {{
+                border: 1.5px solid #0f4c81;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 10pt;
+                text-align: center;
+                text-transform: uppercase;
+                padding: 4px;
+                margin-bottom: 6px;
+                background-color: #f0f4f8;
+                color: #0f4c81;
+                letter-spacing: 0.5px;
+            }}
+
+            .header-info-table {{
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 8.5pt;
+                margin-bottom: 6px;
+            }}
+            .header-info-table td {{
+                padding: 2px 4px;
+                vertical-align: top;
+            }}
+
+            .metric-container {{
+                display: flex;
+                border: 1px solid #d0e1fd;
+                background-color: #f8fbff;
+                border-radius: 4px;
+                margin-bottom: 8px;
+                padding: 4px 0;
+            }}
+            .metric-box {{
+                flex: 1;
+                text-align: center;
+                border-right: 1px solid #d0e1fd;
+            }}
+            .metric-box:last-child {{
+                border-right: none;
+            }}
+            .metric-label {{
+                font-size: 7.5pt;
+                color: #555;
+                font-weight: bold;
+                margin-bottom: 1px;
+                text-transform: uppercase;
+            }}
+            .metric-value {{
+                font-size: 11.5pt;
+                font-weight: bold;
+                color: #0f4c81;
+            }}
+
+            .section-bar {{
+                background-color: #e8f1f5;
+                color: #0f4c81;
+                font-weight: bold;
+                font-size: 8pt;
+                padding: 3px 8px;
+                border-top: 1px solid #b8d4e3;
+                border-bottom: 1px solid #b8d4e3;
+                border-radius: 2px;
+                text-transform: uppercase;
+                display: flex;
+                justify-content: space-between;
+                margin-top: 2px;
+            }}
+
+            .detail-table {{
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 8pt;
+                margin-bottom: 4px;
+                page-break-inside: avoid;
+            }}
+            .detail-table td {{
+                padding: 2px 4px;
+                border-bottom: 1px solid #f0f0f0;
+            }}
+
+            .print-footer-container {{
+                margin-top: 12px;
+                border-top: 1px solid #ccc;
+                padding-top: 4px;
+                font-size: 8pt;
+                color: #555;
+                display: flex;
+                justify-content: space-between;
+                font-family: Arial, sans-serif;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="page-container">
+            <div>
+                {header_html}
+
+                <div class="doc-title">
+                    LAPORAN PERINCIAN BEBAN TUGAS INDIVIDU
+                </div>
+
+                <table class="header-info-table">
+                    <tr>
+                        <td style="width: 58%; text-align: left;">
+                            <b>Nama Pegawai:</b> {nama}<br>
+                            <b>Jawatan Hakiki:</b> {jawatan_hakiki}<br>
+                            <b>Gred Perkhidmatan:</b> {gred_show}
+                        </td>
+                        <td style="width: 42%; text-align: left;">
+                            <b>Kumpulan:</b> {kump_staf}<br>
+                            <b>Sesi Persekolahan:</b> {tahun_sesi}<br>
+                            <b>Tarikh Cetakan:</b> {tarikh_hari}
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="metric-container">
+                    <div class="metric-box">
+                        <div class="metric-label">Beban Kerja Pegawai</div>
+                        <div class="metric-value">{total_jam:.1f} Jam</div>
+                        <div style="margin-top: 1px;">{badge_status}</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Purata Kumpulan ({kump_staf})</div>
+                        <div class="metric-value" style="color: #2b579a;">{purata_kumpulan:.1f} Jam</div>
+                        <div style="font-size: 7pt; color: #777;">Penanda Aras Ideal MySG</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Kedudukan / Perbezaan</div>
+                        <div class="metric-value" style="color: {color_diff};">{diff_text}</div>
+                        <div style="font-size: 7pt; color: #777;">Variasi Agihan Tugas</div>
+                    </div>
+                </div>
+
+                <div style="font-weight: bold; font-size: 8pt; margin-bottom: 2px; color: #0f4c81; text-transform: uppercase;">
+                    📋 SENARAI PERINCIAN AGIHAN TUGAS & PEMBERAT (JAM):
+                </div>
+
+                <!-- 1. PORTFOLIO HAKIKI & PDP -->
+                <div class="section-bar">
+                    <span>1. PORTFOLIO BERJAWATAN HAKIKI (KOD H) & PENGAJARAN DAN PEMBELAJARAN (PDP)</span>
+                    <span>PEMBERAT JAM</span>
+                </div>
+                <table class="detail-table">
+                    <tbody>
+                        {rows_h_html}
+                    </tbody>
+                </table>
+
+                <!-- 2. PORTFOLIO TANPA JAWATAN -->
+                <div class="section-bar">
+                    <span>2. PORTFOLIO TANPA JAWATAN (KOD P)</span>
+                    <span>PEMBERAT JAM</span>
+                </div>
+                <table class="detail-table">
+                    <tbody>
+                        {rows_p_html}
+                    </tbody>
+                </table>
+
+                <!-- 3. JAWATANKUASA SEKOLAH -->
+                <div class="section-bar">
+                    <span>3. JAWATANKUASA SEKOLAH (KOD J)</span>
+                    <span>PEMBERAT JAM</span>
+                </div>
+                <table class="detail-table">
+                    <tbody>
+                        {rows_j_html}
+                    </tbody>
+                </table>
+
+                <!-- JUMLAH BEBAN KERJA KESELURUHAN -->
+                <table style="width: 100%; font-size: 8.5pt; font-weight: bold; margin-top: 3px; margin-bottom: 4px; border-top: 1.5px solid #0f4c81; padding-top: 2px;">
+                    <tr>
+                        <td style="text-align: right; padding-right: 15px; color: #0f4c81;">JUMLAH BEBAN KERJA KESELURUHAN:</td>
+                        <td style="width: 22%; text-align: right; color: #0f4c81; font-size: 9.5pt;">{total_jam:.1f} JAM</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div>
+                <!-- KOTAK GABUNGAN LENGKAP KETETAPAN MYSG KPM -->
+                <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222;">
+                    <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px; text-transform: uppercase;">
+                        📌 KETETAPAN & GARIS PANDUAN PENETAPAN BEBAN KERJA WARGA SEKOLAH (MYSG KPM):
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; margin-bottom: 4px; font-weight: 500;">
+                        <div>• <b>Asas Pengiraan PdP:</b> 1 Waktu PdP = 0.5 Jam (30 Minit)</div>
+                        <div>• <b>Portfolio Hakiki (Kod H):</b> Berdasarkan Deskripsi Tugas Jawatan Rasmi</div>
+                        <div>• <b>Beban Kerja Seimbang:</b> 20.0 – 32.0 Jam/Minggu (PPP) / 40.0 Jam (AKP)</div>
+                        <div>• <b>Prinsip Kesaksamaan:</b> Agihan Portfolio (P) & JK (J) dilaksanakan secara adil mengikut purata kumpulan</div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px;">
+                        <div>• <b>1. Pentadbir:</b> PdP minimum (3.0–6.0 Jam/Minggu). Fokus Portfolio Hakiki (Kod H) & Kepimpinan JK (Kod J).</div>
+                        <div>• <b>2. Guru Akademik:</b> Beban seimbang 20.0–32.0 Jam/Minggu (PdP + Portfolio H/P + Maksimum 3–5 Kod J).</div>
+                        <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP diberi bagi menampung peruntukan masa pengurusan hakiki.</div>
+                        <div>• <b>4. AKP:</b> Masa kerja rasmi operasi pejabat (40.0 Jam/Minggu) tanpa PdP. Penglibatan JK dihadkan (Maksimum 1–2 Kod J).</div>
+                    </div>
+                </div>
+
+                <div class="print-footer-container">
+                    <div><i>Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: <b>{tarikh_hari}</b></i></div>
+                    <div style="white-space: nowrap; font-weight: bold;">[ Halaman 1 daripada 1 ]</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            window.onload = function() {{ window.print(); }};
+        </script>
+    </body>
+    </html>
+    """
+    return html_content
