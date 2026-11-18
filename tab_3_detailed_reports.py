@@ -142,6 +142,7 @@ def render_tab_3(school_info):
                         key=f"btn_dl_all_reports_bulk_{data_ver}"
                     )
                 except Exception as e:
+                    import traceback
                     st.error(f"❌ Ralat semasa menjana laporan Pukal: {str(e)}")
 
         st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
