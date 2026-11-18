@@ -1,13 +1,12 @@
 """
 ========================================================================
 SISTEM PENGURUSAN & PENGIRAAN BEBAN KERJA KAKITANGAN SEKOLAH (MYSG KPM)
-MYSG CORE MODULE - PENGIRAAN TAPAK ASAS (BASE) + PDP
+MYSG CORE MODULE - PENGIRAAN TAPAK ASAS (BASE) + PDP + PEMBERATAN P/J
 ========================================================================
 """
 
 import pandas as pd
 import numpy as np
-import re
 
 SYSTEM_NAME = "MySG KPM: Sistem Pengurusan & Analisis Beban Kerja"
 SYSTEM_VERSION = "1.0.0"
@@ -30,7 +29,7 @@ JAWATAN_RASMI_KPM = [
     "PEMBANTU PENGURUSAN MURID", "JURUTEKNIK KOMPUTER", "PEMBANTU OPERASI"
 ]
 
-# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH RENDAH
+# MAPPING PORTFOLIO HAKIKI (H) - SEKOLAH RENDAH 
 MYSG_PORTFOLIO_H_SR = {
     "HR01": ("Guru Besar (PGB)", 37.5),
     "HR02": ("Guru Penolong Kanan Pentadbiran", 34.0),
@@ -90,7 +89,7 @@ MYSG_PORTFOLIO_H_SM = {
     "HM15": ("Guru Penyelaras Bestari", 28.0),
     "HM16": ("Guru Perpustakaan dan Media (GPM)", 28.0),
     "HM17": ("Guru Data", 28.0),
-"HM18": ("Guru Tingkatan 6 Akademik", 10.0),
+    "HM18": ("Guru Tingkatan 6 Akademik", 10.0),
     "HM19": ("Guru Tingkatan 6 Amali", 10.0),
     "HM20": ("Guru Tingkatan 6 Kokurikulum", 10.0),
     "HM21": ("Guru Prauniversiti Akademik (SSM)", 10.0),
@@ -150,57 +149,61 @@ MYSG_PORTFOLIO_H_SM = {
     "HM75": ("Pegawai Dietetik", 40.0)
 }
 
-# MAPPING PORTFOLIO P
+# MAPPING PORTFOLIO P DENGAN PEMBERAT ANALITIKAL
 MYSG_PORTFOLIO_P = {
-    "P01": ("Guru Kelas", 2.0),
-    "P02": ("Guru Bertugas Harian", 2.0),
-    "P03": ("Penyelaras Program Pendidikan Khas Integrasi Lantikan Dalaman", 2.0),
-    "P04": ("Setiausaha Latihan dalam Perkhidmatan", 2.0),
-    "P05": ("Penyelaras Tahun", 2.0),
-    "P06": ("Setiausaha Jawatankuasa", 2.0),
-    "P07": ("Guru Bimbingan Lantikan Dalaman", 2.0),
-    "P08": ("Ketua Panitia", 2.0),
-    "P09": ("Setiausaha Peperiksaan Dalaman", 2.0),
-    "P10": ("Setiausaha Peperiksaan Awam", 2.0),
-    "P11": ("Penyelaras ICT Lantikan Dalaman", 2.0),
-    "P12": ("Penyelaras Pusat Sumber Sekolah Lantikan Dalaman", 2.0),
-    "P13": ("Guru Resos Masalah Penglihatan", 2.0),
-    "P14": ("Ketua Guru Disiplin", 2.0),
-    "P15": ("Penyelaras Skim Pinjaman Buku Teks", 2.0),
-    "P16": ("Warden Asrama", 2.0),
-    "P17": ("Setiausaha Sukan", 2.0),
-    "P18": ("Penyelaras Unit-Unit Kokurikulum", 2.0),
-    "P19": ("Guru Penasihat Unit-Unit Kokurikulum", 2.0)
+    "P01": ("Guru Kelas", 4.5),
+    "P02": ("Guru Bertugas Harian", 3.0),
+    "P03": ("Penyelaras PPKI Lantikan Dalaman", 5.0),
+    "P04": ("Setiausaha Latihan dalam Perkhidmatan", 2.5),
+    "P05": ("Penyelaras Tahun/Tingkatan", 2.5),
+    "P06": ("Setiausaha Jawatankuasa", 1.5),
+    "P07": ("Guru Bimbingan Lantikan Dalaman", 4.0),
+    "P08": ("Ketua Panitia", 4.0),
+    "P09": ("Setiausaha Peperiksaan Dalaman", 5.0),
+    "P10": ("Setiausaha Peperiksaan Awam", 7.0),
+    "P11": ("Penyelaras ICT Lantikan Dalaman", 3.5),
+    "P12": ("Penyelaras Pusat Sumber Sekolah Lantikan Dalaman", 3.5),
+    "P13": ("Guru Resos Masalah Penglihatan", 3.5),
+    "P14": ("Ketua Guru Disiplin", 6.0),
+    "P15": ("Penyelaras Skim Pinjaman Buku Teks", 4.0),
+    "P16": ("Warden Asrama", 12.0),
+    "P17": ("Setiausaha Sukan", 5.0),
+    "P18": ("Penyelaras Unit-Unit Kokurikulum", 2.5),
+    "P19": ("Guru Penasihat Unit-Unit Kokurikulum", 2.5),
+    "P30": ("Penyelaras Unit-Unit Lain", 2.5) # Tambahan untuk menyokong entri custom seperti Penyelaras Kem Bestari Solat
 }
 
-# MAPPING JAWATANKUASA J
+# MAPPING JAWATANKUASA J DENGAN PEMBERAT ANALITIKAL
 MYSG_JAWATANKUASA_J = {
-    "J01": ("JK Pengurusan Sekolah", 1.0),
-    "J02": ("JK Pengurusan Maklumat Sekolah", 1.0),
-    "J03": ("JK Pengurusan Sumber Manusia", 1.0),
-    "J04": ("JK Pengurusan Kewangan, Akaun dan Aset Sekolah", 1.0),
-    "J05": ("JK Standard Kualiti Pendidikan Malaysia", 1.0),
-    "J06": ("JK Pendidikan Khas Sekolah", 1.0),
-    "J07": ("JK Pengurusan Prasekolah", 1.0),
+    "J01": ("JK Pengurusan Sekolah", 2.0),
+    "J02": ("JK Pengurusan Maklumat Sekolah", 1.5),
+    "J03": ("JK Pengurusan Sumber Manusia", 1.5),
+    "J04": ("JK Pengurusan Kewangan, Akaun dan Aset Sekolah", 2.0),
+    "J05": ("JK Standard Kualiti Pendidikan Malaysia", 1.5),
+    "J06": ("JK Pendidikan Khas Sekolah", 1.5),
+    "J07": ("JK Pengurusan Prasekolah", 1.5),
     "J08": ("JK Pengurusan Bencana Sekolah", 1.0),
-    "J09": ("JK Persatuan Ibu Bapa dan Guru (PIBG)", 1.0),
-    "J10": ("JK Kelab Kebajikan Guru dan Kakitangan", 1.0),
-    "J11": ("JK Pengurusan Murid Orang Asli", 1.0),
-    "J12": ("JK Pengurusan Kurikulum", 1.0),
-    "J13": ("JK Panitia Mata Pelajaran", 1.0),
-    "J14": ("JK Pentaksiran", 1.0),
-    "J15": ("JK Pengurusan Sumber dan Teknologi Pendidikan", 1.0),
-    "J16": ("JK Pengurusan Hal Ehwal Murid (HEM)", 1.0),
-    "J17": ("JK Pengurusan Disiplin Murid", 1.0),
-    "J18": ("JK Pengurusan 3K (Kebersihan, Kesihatan dan Keselamatan)", 1.0),
-    "J19": ("JK Bimbingan dan Kaunseling", 1.0),
-    "J20": ("JK Pengurusan Asrama", 1.0),
-    "J21": ("JK Pengurusan Kokurikulum", 1.0),
-    "J22": ("JK Pembangunan Sukan Sekolah", 1.0),
+    "J09": ("JK Persatuan Ibu Bapa dan Guru (PIBG)", 1.5),
+    "J10": ("JK Kelab Kebajikan Guru dan Kakitangan", 1.5),
+    "J11": ("JK Pengurusan Murid Orang Asli", 1.5),
+    "J12": ("JK Pengurusan Kurikulum", 2.0),
+    "J13": ("JK Panitia Mata Pelajaran", 2.0),
+    "J14": ("JK Pentaksiran", 2.0),
+    "J15": ("JK Pengurusan Sumber dan Teknologi Pendidikan", 1.5),
+    "J16": ("JK Pengurusan Hal Ehwal Murid (HEM)", 2.0),
+    "J17": ("JK Pengurusan Disiplin Murid", 2.0),
+    "J18": ("JK Pengurusan 3K (Kebersihan, Kesihatan dan Keselamatan)", 1.5),
+    "J19": ("JK Bimbingan dan Kaunseling", 1.5),
+    "J20": ("JK Pengurusan Asrama", 2.0),
+    "J21": ("JK Pengurusan Kokurikulum", 2.0),
+    "J22": ("JK Pembangunan Sukan Sekolah", 1.5),
     "J23": ("JK Sukan Tahunan Sekolah", 1.0)
 }
 
 def determine_kategori_staf(row):
+    """
+    Mengenal pasti sama ada staf ialah 'Guru' atau 'Anggota Kumpulan Pelaksana'
+    """
     kumpulan_input = str(row.get('Kumpulan', '')).strip()
     if kumpulan_input in ['Guru', 'Anggota Kumpulan Pelaksana']:
         return kumpulan_input
@@ -245,11 +248,13 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
     kadar_pdp_jam = 40.0 / 60.0 if is_sm else 30.0 / 60.0
     mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
 
+    # 1. Setkan lajur Kumpulan
     df_out['Kumpulan'] = df_out.apply(determine_kategori_staf, axis=1)
 
     if 'Kategori_Staf' in df_out.columns:
         df_out.drop(columns=['Kategori_Staf'], inplace=True)
 
+    # 2. Hitung Jam PdP
     pdp_cols = [c for c in df_out.columns if c.startswith('Waktu_')]
     if pdp_cols:
         for col in pdp_cols:
@@ -260,19 +265,16 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
         df_out['JUMLAH_WAKTU_PDP'] = 0
         df_out['JUMLAH_JAM_PDP'] = 0.0
 
-    # PENGECAMAN PINTAR: SEDUT KOD DARI JAWATAN JIKA KOD_H_1 KOSONG
+    # 3. Hitung Jam Portfolio H (Menggunakan Tapak Asas)
     def get_jam_h(row):
         kod_raw = extract_code(row.get('Kod_H_1', ''))
-        if not kod_raw:
-            m = re.search(r'(HR|HM)(\d{2})', str(row.get('Jawatan', '')))
-            if m:
-                kod_raw = f"{m.group(1)}{m.group(2)}"
         if kod_raw in mapping_h:
             return mapping_h[kod_raw][1]
         return 0.0
 
     df_out['JUMLAH_JAM_PORTFOLIO_H'] = df_out.apply(get_jam_h, axis=1)
 
+    # 4. Hitung Jam Portfolio P
     p_cols = [c for c in df_out.columns if c.startswith('Kod_P_')]
     def get_jam_p(row):
         total_p = 0.0
@@ -289,6 +291,7 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
 
     df_out['JUMLAH_JAM_PORTFOLIO_P'] = df_out.apply(get_jam_p, axis=1) if p_cols else 0.0
 
+    # 5. Hitung Jam Jawatankuasa J
     j_cols = [c for c in df_out.columns if c.startswith('Kod_J_')]
     def get_jam_j(row):
         total_j = 0.0
@@ -305,6 +308,7 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
 
     df_out['JUMLAH_JAM_JAWATANKUASA'] = df_out.apply(get_jam_j, axis=1) if j_cols else 0.0
 
+    # 6. Hitung Jumlah Beban Keseluruhan (Gabungan PdP + Tapak Asas + P + J)
     df_out['JUMLAH_BEBAN_KESELURAHAN'] = (
         df_out['JUMLAH_JAM_PDP'] +
         df_out['JUMLAH_JAM_PORTFOLIO_H'] +
@@ -312,6 +316,7 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
         df_out['JUMLAH_JAM_JAWATANKUASA']
     )
 
+    # 7. Susun Semula
     cols = list(df_out.columns)
     if 'Kumpulan' in cols:
         cols.remove('Kumpulan')
