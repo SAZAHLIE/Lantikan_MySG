@@ -6,7 +6,6 @@ MYSG KPM: TAB 3 - LAPORAN PERINCIAN BEBAN KERJA INDIVIDU
 
 import streamlit as st
 import pandas as pd
-import io
 import importlib
 import print_engine
 
@@ -25,20 +24,25 @@ def render_tab_3(school_info):
 
     if df_latest is not None and not df_latest.empty:
         df_display = df_latest.copy()
-        df_display['Waktu_PdP'] = df_display.get('JUMLAH_WAKTU_PDP', 0)
-        df_display['Jam_PdP'] = df_display.get('JUMLAH_JAM_PDP', 0.0).round(1)
+        
+        # PASTIKAN SEMUA LAJUR DI TUKAR KEPADA NOMBOR/FLOAT 
+        df_display['Waktu_PdP'] = pd.to_numeric(df_display.get('JUMLAH_WAKTU_PDP', 0), errors='coerce').fillna(0)
+        df_display['Jam_PdP'] = pd.to_numeric(df_display.get('JUMLAH_JAM_PDP', 0.0), errors='coerce').fillna(0.0).round(1)
 
-        jam_h = df_display.get('JUMLAH_JAM_PORTFOLIO_H', 0.0)
-        jam_p = df_display.get('JUMLAH_JAM_PORTFOLIO_P', 0.0)
+        jam_h = pd.to_numeric(df_display.get('JUMLAH_JAM_PORTFOLIO_H', 0.0), errors='coerce').fillna(0.0)
+        jam_p = pd.to_numeric(df_display.get('JUMLAH_JAM_PORTFOLIO_P', 0.0), errors='coerce').fillna(0.0)
         df_display['Jam_Portfolio'] = (jam_h + jam_p).round(1)
-        df_display['Jam_Jawatankuasa'] = df_display.get('JUMLAH_JAM_JAWATANKUASA', 0.0).round(1)
+        
+        df_display['Jam_Jawatankuasa'] = pd.to_numeric(df_display.get('JUMLAH_JAM_JAWATANKUASA', 0.0), errors='coerce').fillna(0.0).round(1)
 
-        df_display['Jumlah_Jam_Beban'] = df_display.get('JUMLAH_BEBAN_KESELURAHAN', 
-            df_display['Jam_PdP'] + df_display['Jam_Portfolio'] + df_display['Jam_Jawatankuasa']
-        ).round(1)
+        df_display['Jumlah_Jam_Beban'] = pd.to_numeric(
+            df_display.get('JUMLAH_BEBAN_KESELURAHAN', df_display['Jam_PdP'] + df_display['Jam_Portfolio'] + df_display['Jam_Jawatankuasa']),
+            errors='coerce'
+        ).fillna(0.0).round(1)
 
+        # PENYELESAIAN RALAT TYPEERROR ('<' not supported) TERLETAK DI SINI:
         df_display['Status_Agihan'] = df_display['Jumlah_Jam_Beban'].apply(
-            lambda x: "🟢 SEIMBANG" if 35 <= x <= 50 else ("🔴 TINGGI" if x > 50 else "🟡 OPTIMUM")
+            lambda x: "🟢 SEIMBANG" if 37.0 <= float(x) <= 45.0 else ("🔴 TINGGI" if float(x) > 45.0 else "🔵 RINGAN")
         )
 
         # 1. BINA JADUAL BANDINGAN PURATA KUMPULAN
@@ -100,7 +104,7 @@ def render_tab_3(school_info):
         st.caption("Jana dan muat turun gabungan Laporan Perincian Beban Tugas (A4 Portrait) bagi semua warga sekolah dalam satu fail.")
         
         if st.button("🔄 Jana & Sediakan Laporan Individu Pukal", type="primary", key=f"btn_prep_all_reports_bulk_{data_ver}"):
-            with st.spinner("Sedang menjana fail laporan untuk semua kakitangan..."):
+            with st.spinner("Sedang menjana fail laporan untuk semua kakitangan. Proses ini mungkin mengambil masa sedikit masa..."):
                 try:
                     combined_html = ""
                     for i, row in df_display.iterrows():
@@ -155,7 +159,7 @@ def render_tab_3(school_info):
 
         staf_ind_row = df_display[df_display['Nama'] == selected_staf_ind].iloc[0]
         kump_staf = staf_ind_row.get('Kumpulan', 'Guru')
-        beban_ind = round(staf_ind_row.get('Jumlah_Jam_Beban', 0.0), 1)
+        beban_ind = round(float(staf_ind_row.get('Jumlah_Jam_Beban', 0.0)), 1)
 
         purata_kump = beban_guru if kump_staf == 'Guru' else beban_akp
         diff_jam = round(beban_ind - purata_kump, 1)
