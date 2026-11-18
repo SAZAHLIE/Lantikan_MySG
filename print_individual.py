@@ -35,7 +35,14 @@ def extract_pdp_from_row(staf_row):
         if pd.notna(subjek) and str(subjek).strip() != '' and str(subjek).strip() != '0':
             kelas = staf_row.get(f'Kelas_{i}', '-')
             waktu = staf_row.get(f'Waktu_{i}', '2')
-            new_list.append({'subjek': str(subjek).strip(), 'kelas': str(kelas).strip(), 'waktu': str(waktu).strip()})
+            
+            # Semakan ralat untuk memastikan waktu sentiasa numerik
+            try:
+                waktu_val = float(waktu)
+            except ValueError:
+                waktu_val = 0.0
+                
+            new_list.append({'subjek': str(subjek).strip(), 'kelas': str(kelas).strip(), 'waktu': str(waktu_val).replace('.0', '')})
     return new_list
 
 def extract_portfolio_from_row(staf_row):
@@ -45,11 +52,8 @@ def extract_portfolio_from_row(staf_row):
         kod = staf_row.get(f'Kod_P_{i}')
         if pd.notna(kod) and str(kod).strip() != '' and str(kod).strip() != '0':
             perincian = staf_row.get(f'Detail_P_{i}', '-')
-            
-            # Cari pemberat jam dari pangkalan data MYSG_PORTFOLIO_P
             kod_raw = str(kod).split('|')[0].strip().upper().replace('PR', 'P').replace('PM', 'P')
             jam_val = MYSG_PORTFOLIO_P.get(kod_raw, ('', 1.5))[1]
-            
             new_list.append({'kod': str(kod).strip(), 'perincian': str(perincian).strip(), 'jam': jam_val})
     return new_list
 
@@ -60,33 +64,26 @@ def extract_jk_from_row(staf_row):
         kod = staf_row.get(f'Kod_J_{i}')
         if pd.notna(kod) and str(kod).strip() != '' and str(kod).strip() != '0':
             perincian = staf_row.get(f'Detail_J_{i}', '-')
-            
-            # Cari pemberat jam dari pangkalan data MYSG_JAWATANKUASA_J
             kod_raw = str(kod).split('|')[0].strip().upper().replace('JR', 'J').replace('JM', 'J')
             jam_val = MYSG_JAWATANKUASA_J.get(kod_raw, ('', 1.0))[1]
-            
             new_list.append({'kod': str(kod).strip(), 'perincian': str(perincian).strip(), 'jam': jam_val})
     return new_list
 
-# -------------------------------------------------------------------
-# PENYELESAIAN TERUS UNTUK MENDAPATKAN JAM HAKIKI (KOD H)
-# -------------------------------------------------------------------
 def force_get_h_base_hours(staf_row, jenis_sekolah="Sekolah Rendah"):
-    """
-    Memaksa pengambilan nilai jam dengan merujuk terus kepada nilai yang
-    dikira oleh mysg_core.py supaya tiada ralat pemadanan (mismatch).
-    """
-    # 1. Cuba cari nilai yang telah dikira terus di dalam DataFrame
+    """Dapatkan nilai jam 'Tapak Asas' bagi Portfolio Hakiki (Kod H)."""
     jam_h = staf_row.get('JUMLAH_JAM_PORTFOLIO_H', None)
-    if pd.notna(jam_h) and float(jam_h) > 0:
-        return float(jam_h)
-        
-    # 2. Jika tiada, kita ambil dari kamus (dictionary)
+    if pd.notna(jam_h):
+        try:
+            val = float(jam_h)
+            if val > 0: return val
+        except ValueError:
+            pass
+            
     is_sm = "Menengah" in str(jenis_sekolah)
     mapping_h = MYSG_PORTFOLIO_H_SM if is_sm else MYSG_PORTFOLIO_H_SR
-    
     kod_h_raw = str(staf_row.get('Kod_H_1', '')).split('|')[0].strip().upper()
-    return mapping_h.get(kod_h_raw, ('', 0.0))[1]
+    return float(mapping_h.get(kod_h_raw, ('', 0.0))[1])
+
 
 def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     """Menjana HTML Surat Lantikan Tugas Rasmi."""
@@ -370,13 +367,18 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
     tarikh_hari = datetime.now().strftime("%d/%m/%Y %I:%M %p")
 
-    # MENDAPATKAN NILAI JAM TAPAK ASAS DENGAN PENYELESAIAN TERUS (FORCE-FETCH)
+    # Pastikan total_jam sentiasa jenis Float
+    try:
+        total_jam = float(staf_row.get('JUMLAH_BEBAN_KESELURAHAN', 0.0) or 0.0)
+    except ValueError:
+        total_jam = 0.0
+        
+    total_jam = round(total_jam, 1)
+
+    # Dapatkan nilai Tapak Asas (Float)
     jam_tapak_asas = force_get_h_base_hours(staf_row, jenis_sek)
 
-    # JUMLAH KESELURUHAN & PURATA
-    total_jam = round(float(staf_row.get('JUMLAH_BEBAN_KESELURAHAN', 27.0) or 0.0), 1)
     purata_kumpulan = 38.0
-
     if isinstance(df_all_staff, pd.DataFrame) and not df_all_staff.empty and 'JUMLAH_BEBAN_KESELURAHAN' in df_all_staff.columns:
         if 'Kumpulan' in df_all_staff.columns:
             sub_kump = df_all_staff[df_all_staff['Kumpulan'] == kump_staf]
@@ -390,9 +392,10 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     diff_text = f"+{diff_jam} jam dari purata" if diff_jam >= 0 else f"{diff_jam} jam dari purata"
     color_diff = "#d9534f" if diff_jam > 0 else "#2e7d32"
 
-    if total_jam > 35.0 if 'AKP' in kump_staf.upper() or 'PELAKSANA' in kump_staf.upper() else total_jam > 32.0:
+    # PEMBAIKAN RALAT TYPEERROR: Gunakan kurungan dan pastikan semuanya nombor (Float)
+    if float(total_jam) > 45.0:
         badge_status = '<span style="background-color: #fde8e8; color: #9b1c1c; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🔴 TINGGI</span>'
-    elif total_jam >= 20.0:
+    elif float(total_jam) >= 37.0:
         badge_status = '<span style="background-color: #def7ec; color: #03543f; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🟢 SEIMBANG (IDEAL)</span>'
     else:
         badge_status = '<span style="background-color: #e1effe; color: #1e429f; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🔵 RINGAN</span>'
@@ -412,16 +415,18 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         for idx_p, item in enumerate(pdp_list):
             subjek = item.get('subjek', '-')
             kelas = item.get('kelas', '-')
-            waktu = item.get('waktu', '2')
+            waktu_str = item.get('waktu', '2')
             try: 
-                jam_val = round(float(waktu) * kadar_pdp_jam, 1)
-            except: 
+                waktu_val = float(waktu_str)
+                jam_val = round(waktu_val * kadar_pdp_jam, 1)
+            except ValueError: 
+                waktu_val = 0.0
                 jam_val = 0.0
                 
             bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
             rows_h_html += f"""
             <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; {subjek} ({kelas}) • <i style="color: #555;">{waktu} Waktu</i></td>
+                <td style="padding-left: 12px;">• &nbsp; {subjek} ({kelas}) • <i style="color: #555;">{int(waktu_val) if waktu_val.is_integer() else waktu_val} Waktu</i></td>
                 <td style="text-align: right; font-weight: bold; color: #2b579a;">{jam_val:.1f} jam</td>
             </tr>
             """
@@ -440,7 +445,12 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         for idx_p, item in enumerate(p_list):
             kod_p = item.get('kod', 'P')
             perincian_p = item.get('perincian', '-')
-            jam_val = round(float(item.get('jam', 1.5)), 1)
+            try:
+                jam_val = float(item.get('jam', 1.5))
+            except ValueError:
+                jam_val = 0.0
+                
+            jam_val = round(jam_val, 1)
             bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
             rows_p_html += f"""
             <tr style="background-color: {bg_color};">
@@ -463,7 +473,12 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         for idx_j, item in enumerate(j_list):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
-            jam_val = round(float(item.get('jam', 1.0)), 1)
+            try:
+                jam_val = float(item.get('jam', 1.0))
+            except ValueError:
+                jam_val = 0.0
+                
+            jam_val = round(jam_val, 1)
             bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
             rows_j_html += f"""
             <tr style="background-color: {bg_color};">
@@ -694,23 +709,23 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
 
             <div>
                 <!-- KOTAK GABUNGAN LENGKAP KETETAPAN MYSG KPM -->
-                <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222;">
+                <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222; page-break-inside: avoid;">
                     <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px; text-transform: uppercase;">
-                        📌 KETETAPAN & GARIS PANDUAN PENETAPAN BEBAN KERJA WARGA SEKOLAH (MYSG KPM):
+                        📌 KETETAPAN & GARIS PANDUAN PENGIRAAN BEBAN KERJA (MYSG KPM)
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; margin-bottom: 4px; font-weight: 500;">
-                        <div>• <b>Asas Pengiraan PdP:</b> 1 Waktu PdP = 0.5 Jam (30 Minit)</div>
-                        <div>• <b>Portfolio Hakiki (Kod H):</b> Berdasarkan Deskripsi Tugas Jawatan Rasmi</div>
-                        <div>• <b>Beban Kerja Seimbang:</b> 20.0 – 32.0 Jam/Minggu (PPP) / 40.0 Jam (AKP)</div>
-                        <div>• <b>Prinsip Kesaksamaan:</b> Agihan Portfolio (P) & JK (J) dilaksanakan secara adil mengikut purata kumpulan</div>
+                        <div>• <b>Masa Asas 45 Jam:</b> Ditetapkan JPA selaras dengan <i>International Labour Organization</i> (ILO).</div>
+                        <div>• <b>Pelaksanaan Masa 45 Jam (PGB & AKP):</b> Berdasarkan waktu bekerja pejabat (38 jam 30 minit bekerja + 6 jam 30 minit rehat).</div>
+                        <div>• <b>Pelaksanaan Masa 45 Jam (Guru):</b> Gabungan Waktu Persekolahan (PdP & Bukan PdP) + Luar Waktu Persekolahan (Kokurikulum & Lain-lain/Rencam).</div>
+                        <div>• <b>Tugasan Cuti Sekolah:</b> PGB boleh mengarahkan guru bertugas cuti sekolah maksimum separuh daripada jumlah hari cuti (Maks. 22 Hari/Tahun).</div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px;">
                         <div>• <b>1. Pentadbir:</b> PdP minimum (3.0–6.0 Jam/Minggu). Fokus Portfolio Hakiki (Kod H) & Kepimpinan JK (Kod J).</div>
-                        <div>• <b>2. Guru Akademik:</b> Beban seimbang 20.0–32.0 Jam/Minggu (PdP + Portfolio H/P + Maksimum 3–5 Kod J).</div>
-                        <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP diberi bagi menampung peruntukan masa pengurusan hakiki.</div>
-                        <div>• <b>4. AKP:</b> Masa kerja rasmi operasi pejabat (40.0 Jam/Minggu) tanpa PdP. Penglibatan JK dihadkan (Maksimum 1–2 Kod J).</div>
+                        <div>• <b>2. Guru Akademik:</b> Beban optimum (37.0 - 45.0 Jam/Minggu). Lebih 45 Jam dikira beban <b>TINGGI</b>.</div>
+                        <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP untuk menampung masa pengurusan hakiki.</div>
+                        <div>• <b>4. AKP:</b> Masa kerja pejabat operasi (40.0 Jam/Minggu). Beban sampingan (Kod P/J) terhad.</div>
                     </div>
                 </div>
 
