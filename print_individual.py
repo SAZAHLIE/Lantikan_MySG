@@ -8,9 +8,9 @@ import pandas as pd
 from datetime import datetime
 from letterhead_template import (
     get_official_letterhead, 
-    get_appointment_letter_footer,
     get_a4_print_css
 )
+from letter_footer import get_appointment_letter_footer_html
 from mysg_core import MYSG_PORTFOLIO_H_SM, MYSG_PORTFOLIO_H_SR, MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
 
 def get_malay_official_date():
