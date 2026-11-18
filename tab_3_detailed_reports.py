@@ -96,11 +96,11 @@ def render_tab_3(school_info):
         st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
         
         # --- CETAKAN PUKAL KESELURUHAN STAF ---
-        st.markdown("#### 📦 Cetakan Pukal (Keseluruhan Staf)")
+        st.markdown("#### 📦 Cetakan Pukal Laporan Individu (Keseluruhan Staf)")
         st.caption("Jana dan muat turun gabungan Laporan Perincian Beban Tugas (A4 Portrait) bagi semua warga sekolah dalam satu fail.")
         
         if st.button("🔄 Jana & Sediakan Laporan Individu Pukal", type="primary", key=f"btn_prep_all_reports_bulk_{data_ver}"):
-            with st.spinner("Sedang menjana fail laporan untuk semua kakitangan... Fungsi ini mungkin mengambil masa sebentar."):
+            with st.spinner("Sedang menjana fail laporan untuk semua kakitangan..."):
                 try:
                     combined_html = ""
                     for i, row in df_display.iterrows():
@@ -141,7 +141,6 @@ def render_tab_3(school_info):
                     st.error(f"❌ Ralat semasa menjana laporan Pukal: {str(e)}")
 
         st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
-
 
         # BAHAGIAN 2: CARIAN & ANALISIS INDIVIDU
         st.markdown("#### 2. Carian & Analisis Perincian Beban Kerja Individu")
@@ -197,4 +196,3 @@ def render_tab_3(school_info):
 
     else:
         st.warning("⚠️ Tiada data kakitangan ditemui. Sila muat naik CSV di Tab 1 atau buka Vault Terenkripsi di Halaman Utama.")
-```[cite: 20, 21, 23, 24]
