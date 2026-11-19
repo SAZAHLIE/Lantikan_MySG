@@ -40,7 +40,6 @@ def render_tab_3(school_info):
             errors='coerce'
         ).fillna(0.0).round(1)
 
-        # PENYELESAIAN RALAT TYPEERROR ('<' not supported) TERLETAK DI SINI:
         df_display['Status_Agihan'] = df_display['Jumlah_Jam_Beban'].apply(
             lambda x: "🟢 SEIMBANG" if 37.0 <= float(x) <= 45.0 else ("🔴 TINGGI" if float(x) > 45.0 else "🔵 RINGAN")
         )
@@ -107,7 +106,8 @@ def render_tab_3(school_info):
             with st.spinner("Sedang menjana fail laporan untuk semua kakitangan. Proses ini mungkin mengambil masa sedikit masa..."):
                 try:
                     combined_html = ""
-                    for i, row in df_display.iterrows():
+                    # 🔴 PENYELESAIAN UTAMA: Menggunakan fungsi 'enumerate' untuk memisahkan indeks dan memastikan turutan sentiasa dibaca sebagai nombor bulat (integer)
+                    for count, (idx, row) in enumerate(df_display.iterrows()):
                         html_ind = generate_individual_detailed_report_html(
                             row, 
                             school_info, 
@@ -118,13 +118,15 @@ def render_tab_3(school_info):
                         else:
                             body_content = html_ind
                             
-                        if i == 0 and "<head>" in html_ind:
+                        # Tukar pemboleh ubah 'i' kepada 'count' (integer yang sah)
+                        if count == 0 and "<head>" in html_ind:
                              head_content = html_ind.split("<head>")[1].split("</head>")[0]
                              combined_html += f"<!DOCTYPE html><html lang='ms'><head>{head_content}</head><body>"
                         
                         combined_html += body_content
                         
-                        if i < len(df_display) - 1:
+                        # Membandingkan integer 'count' dengan integer 'len()'
+                        if count < len(df_display) - 1:
                             combined_html += "<div style='page-break-after: always;'></div>"
                     
                     combined_html += "</body></html>"
