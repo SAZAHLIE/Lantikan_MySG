@@ -26,6 +26,7 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR SANDAKAN')).upper()
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
     tahun_sesi = str(school_info.get('tahun_sesi', '2026/2027'))
+    
     # Tetapan Zon Masa Malaysia (UTC+8)
     tz_malaysia = timezone(timedelta(hours=8))
     tarikh_hari = datetime.now(tz_malaysia).strftime("%d/%m/%Y %I:%M %p")
@@ -146,7 +147,7 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
                     font-family: Arial, sans-serif;
                 }}
                 @bottom-left {{
-                    content: "Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: {tarikh_cetak}";
+                    content: "Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: {tarikh_hari}";
                     font-size: 8pt;
                     font-style: italic;
                     color: #555;
@@ -290,7 +291,7 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
         </div>
 
         <div class="print-footer-container">
-            <div><i>Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: <b>{tarikh_cetak}</b></i></div>
+            <div><i>Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: <b>{tarikh_hari}</b></i></div>
             <div style="white-space: nowrap; font-weight: bold;">[ Halaman 1 daripada 1 ]</div>
         </div>
 
