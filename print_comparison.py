@@ -5,7 +5,7 @@ MYSG KPM: MODUL PENJANAAN LAPORAN BANDINGAN KESELURUHAN (A4 LANDSCAPE)
 """
 
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from letterhead_template import get_official_letterhead, get_a4_print_css
 
 def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESELURUHAN WARGA SEKOLAH", school_info=None, session_state=None, *args, **kwargs):
@@ -26,8 +26,10 @@ def generate_detailed_comparison_html(df_staff, title="LAPORAN BEBAN KERJA KESEL
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR SANDAKAN')).upper()
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
     tahun_sesi = str(school_info.get('tahun_sesi', '2026/2027'))
-    tarikh_cetak = datetime.now().strftime("%d/%m/%Y %I:%M %p")
-
+    # Tetapan Zon Masa Malaysia (UTC+8)
+    tz_malaysia = timezone(timedelta(hours=8))
+    tarikh_hari = datetime.now(tz_malaysia).strftime("%d/%m/%Y %I:%M %p")
+    
     jumlah_rekod = 0
     kpi_rows_html = ""
     grouped_rows_html = ""
