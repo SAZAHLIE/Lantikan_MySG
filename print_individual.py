@@ -5,7 +5,7 @@ MYSG KPM: MODUL PENJANAAN SURAT LANTIKAN & LAPORAN INDIVIDU (A4 PORTRAIT)
 """
 
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from letterhead_template import (
     get_official_letterhead, 
     get_a4_print_css
@@ -20,7 +20,9 @@ def get_malay_official_date():
         5: "MEI", 6: "JUN", 7: "JULAI", 8: "OGOS",
         9: "SEPTEMBER", 10: "OKTOBER", 11: "NOVEMBER", 12: "DISEMBER"
     }
-    now = datetime.now()
+    # Tetapan Zon Masa Malaysia (UTC+8)
+    tz_malaysia = timezone(timedelta(hours=8))
+    now = datetime.now(tz_malaysia)
     return f"{now.day} {bulan_dict[now.month]} {now.year}"
 
 # -------------------------------------------------------------------
@@ -338,7 +340,10 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     kump_staf = str(staf_row.get('Kumpulan', 'Guru')).strip()
     tahun_sesi = str(school_info.get('tahun_sesi', '2027'))
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
-    tarikh_hari = datetime.now().strftime("%d/%m/%Y %I:%M %p")
+    
+    # Tetapan Zon Masa Malaysia (UTC+8) untuk tarikh cetakan laporan
+    tz_malaysia = timezone(timedelta(hours=8))
+    tarikh_hari = datetime.now(tz_malaysia).strftime("%d/%m/%Y %I:%M %p")
 
     try:
         total_jam = float(staf_row.get('JUMLAH_BEBAN_KESELURAHAN', 0.0) or 0.0)
@@ -349,7 +354,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
 
     jam_tapak_asas = force_get_h_base_hours(staf_row, jenis_sek)
 
-    # 🔴 PENYELESAIAN UTAMA RALAT 'STR & INT': Memaksa Pandas menukar lajur ke format nombor secara selamat sebelum membuat purata (mean)
     purata_kumpulan = 38.0
     if isinstance(df_all_staff, pd.DataFrame) and not df_all_staff.empty and 'JUMLAH_BEBAN_KESELURAHAN' in df_all_staff.columns:
         df_safe = df_all_staff.copy()
