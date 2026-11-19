@@ -37,7 +37,7 @@ def extract_pdp_from_row(staf_row):
             
             try:
                 waktu_val = float(waktu)
-            except ValueError:
+            except (ValueError, TypeError):
                 waktu_val = 0.0
                 
             new_list.append({'subjek': str(subjek).strip(), 'kelas': str(kelas).strip(), 'waktu': str(waktu_val).replace('.0', '')})
@@ -74,7 +74,7 @@ def force_get_h_base_hours(staf_row, jenis_sekolah="Sekolah Rendah"):
         try:
             val = float(jam_h)
             if val > 0: return val
-        except ValueError:
+        except (ValueError, TypeError):
             pass
             
     is_sm = "Menengah" in str(jenis_sekolah)
@@ -94,7 +94,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
 
     nama = str(staf_row.get('Nama', 'ABDUL SABAH @ MOHD SABA B MOHD')).upper()
     
-    # PERUBAHAN: PAPARAN IC PENUH TANPA XXXX
     ic_no = str(staf_row.get('No_KP', '-')).replace('nan', '-').replace('None', '-')
     if not ic_no or ic_no == 'nan':
         ic_no = '-'
@@ -111,7 +110,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     tarikh_rasmi = get_malay_official_date()
     jawatan_hakiki = str(staf_row.get('Kod_H_1', staf_row.get('Jawatan', 'HR24 | PEMBANTU TADBIR (P/O)'))).strip()
 
-    # 1. PDP LIST (2.1.X)
     pdp_html_list = ""
     pdp_list = extract_pdp_from_row(staf_row)
     if len(pdp_list) > 0:
@@ -123,7 +121,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     else:
         pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.1. Tiada Rekod Pengajaran (PdP)</div>"
 
-    # 2. PORTFOLIO TANPA JAWATAN (2.2.X)
     p_html_list = ""
     p_list = extract_portfolio_from_row(staf_row)
     if len(p_list) > 0:
@@ -131,7 +128,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             kod_p = item.get('kod', 'P')
             perincian_p = item.get('perincian', '-')
             
-            # Buang ulangan nama portfolio dalam perincian jika ada
             label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(kod_p, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
             dtl_str = f": {perincian_p}" if perincian_p and perincian_p != label_p and perincian_p not in label_p else ""
             
@@ -139,7 +135,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     else:
         p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.1. Tiada Portfolio Ditetapkan</div>"
 
-    # 3. JAWATANKUASA (2.3.X)
     j_html_list = ""
     j_list = extract_jk_from_row(staf_row)
     if len(j_list) > 0:
@@ -147,7 +142,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
             
-            # Buang ulangan nama jawatankuasa dalam perincian jika ada
             label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_j, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
             dtl_str = f": {perincian_j}" if perincian_j and perincian_j != label_j and perincian_j not in label_j else ""
             
@@ -227,7 +221,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
         <div>
             {header_html}
 
-            <!-- BLOK RUJUKAN & TARIKH RASMI -->
             <table class="ref-block-table">
                 <tr>
                     <td style="width: 45%;"></td>
@@ -248,7 +241,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
                 </tr>
             </table>
 
-            <!-- MAKLUMAT PEGAWAI -->
             <div style="font-weight: bold; font-size: 10.5pt; line-height: 1.25; margin-bottom: 11pt;">
                 {nama}<br>
                 <span style="font-weight: normal;">No. KP: {ic_no}</span>
@@ -256,7 +248,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
 
             <div style="font-size: 10.5pt; margin-bottom: 11pt;">Tuan/Puan,</div>
 
-            <!-- TAJUK SURAT -->
             <div class="title-box">
                 SURAT LANTIKAN DAN AGIHAN TUGAS BAGI SESI PERSEKOLAHAN TAHUN {tahun_sesi}
             </div>
@@ -269,19 +260,16 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
                 2. Sukacita dimaklumkan bahawa pihak sekolah melantik tuan/puan untuk memegang jawatan dan melaksanakan amanah seperti berikut berkuat kuasa mulai tarikh surat ini dikeluarkan:
             </div>
 
-            <!-- 2.1. JAWATAN BERPORTFOLIO -->
             <div class="section-group" style="margin-left: 10px;">
                 <div class="section-sub-title">2.1. JAWATAN BERPORTFOLIO: {jawatan_hakiki}</div>
                 {pdp_html_list}
             </div>
 
-            <!-- 2.2. PORTFOLIO TANPA JAWATAN -->
             <div class="section-group" style="margin-left: 10px;">
                 <div class="section-sub-title">2.2. PORTFOLIO TANPA JAWATAN:</div>
                 {p_html_list}
             </div>
 
-            <!-- 2.3. JAWATANKUASA -->
             <div class="section-group" style="margin-left: 10px;">
                 <div class="section-sub-title">2.3. JAWATANKUASA:</div>
                 {j_html_list}
@@ -299,7 +287,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
                 Sekian, terima kasih.
             </div>
 
-            <!-- MOTTO/SLOGAN: 1 BARIS LANGKAU -->
             <div style="font-weight: bold; text-transform: uppercase; font-size: 10.5pt; margin-bottom: 11pt;">
                 "MALAYSIA MADANI"<br><br>
                 "BERKHIDMAT UNTUK NEGARA"
@@ -307,7 +294,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
 
             <div style="font-size: 10.5pt; margin-bottom: 11pt;">Saya yang menjalankan amanah,</div>
 
-            <!-- LANGKAU 3 BARIS UNTUK TANDATANGAN -->
             <div style="margin-top: 33pt; font-weight: bold; text-transform: uppercase; font-size: 10.5pt;">
                 ({nama_gb})<br>
                 <span style="font-weight: normal; text-transform: none;">
@@ -316,7 +302,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
                 </span>
             </div>
 
-            <!-- KAKI SURAT (GARISAN HITAM LURUS) -->
             {footer_garis_html}
         </div>
 
@@ -346,7 +331,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     detail_h = str(staf_row.get('Detail_H_1', '')).upper()
     jawatan_hakiki = f"{kod_h} | {detail_h}" if kod_h else str(staf_row.get('Jawatan', 'HR12 | Guru Akademik KSSR'))
     
-    # PERUBAHAN: PAPARAN IC PENUH TANPA XXXX
     ic_no = str(staf_row.get('No_KP', '-')).replace('nan', '-').replace('None', '-')
     if not ic_no or ic_no == 'nan':
         ic_no = '-'
@@ -358,22 +342,28 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
 
     try:
         total_jam = float(staf_row.get('JUMLAH_BEBAN_KESELURAHAN', 0.0) or 0.0)
-    except ValueError:
+    except (ValueError, TypeError):
         total_jam = 0.0
         
     total_jam = round(total_jam, 1)
 
     jam_tapak_asas = force_get_h_base_hours(staf_row, jenis_sek)
 
+    # 🔴 PENYELESAIAN UTAMA RALAT 'STR & INT': Memaksa Pandas menukar lajur ke format nombor secara selamat sebelum membuat purata (mean)
     purata_kumpulan = 38.0
     if isinstance(df_all_staff, pd.DataFrame) and not df_all_staff.empty and 'JUMLAH_BEBAN_KESELURAHAN' in df_all_staff.columns:
-        if 'Kumpulan' in df_all_staff.columns:
-            sub_kump = df_all_staff[df_all_staff['Kumpulan'] == kump_staf]
+        df_safe = df_all_staff.copy()
+        df_safe['JUMLAH_BEBAN_KESELURAHAN'] = pd.to_numeric(df_safe['JUMLAH_BEBAN_KESELURAHAN'], errors='coerce')
+        
+        if 'Kumpulan' in df_safe.columns:
+            sub_kump = df_safe[df_safe['Kumpulan'] == kump_staf]
         else:
-            sub_kump = df_all_staff
+            sub_kump = df_safe
             
         if not sub_kump.empty:
-            purata_kumpulan = round(float(sub_kump['JUMLAH_BEBAN_KESELURAHAN'].mean()), 1)
+            mean_val = sub_kump['JUMLAH_BEBAN_KESELURAHAN'].mean(skipna=True)
+            if pd.notna(mean_val):
+                purata_kumpulan = round(float(mean_val), 1)
 
     diff_jam = round(total_jam - purata_kumpulan, 1)
     diff_text = f"+{diff_jam} jam dari purata" if diff_jam >= 0 else f"{diff_jam} jam dari purata"
@@ -404,7 +394,7 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             try: 
                 waktu_val = float(waktu_str)
                 jam_val = round(waktu_val * kadar_pdp_jam, 1)
-            except ValueError: 
+            except (ValueError, TypeError): 
                 waktu_val = 0.0
                 jam_val = 0.0
                 
@@ -431,7 +421,7 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             perincian_p = item.get('perincian', '-')
             try:
                 jam_val = float(item.get('jam', 1.5))
-            except ValueError:
+            except (ValueError, TypeError):
                 jam_val = 0.0
                 
             jam_val = round(jam_val, 1)
@@ -462,7 +452,7 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             perincian_j = item.get('perincian', '-')
             try:
                 jam_val = float(item.get('jam', 1.0))
-            except ValueError:
+            except (ValueError, TypeError):
                 jam_val = 0.0
                 
             jam_val = round(jam_val, 1)
@@ -657,7 +647,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                     📋 SENARAI PERINCIAN AGIHAN TUGAS & PEMBERAT (JAM):
                 </div>
 
-                <!-- 1. PORTFOLIO HAKIKI & PDP -->
                 <div class="section-bar">
                     <span>1. PORTFOLIO BERJAWATAN HAKIKI (KOD H) & PENGAJARAN DAN PEMBELAJARAN (PDP)</span>
                     <span>PEMBERAT JAM</span>
@@ -668,7 +657,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                     </tbody>
                 </table>
 
-                <!-- 2. PORTFOLIO TANPA JAWATAN -->
                 <div class="section-bar">
                     <span>2. PORTFOLIO TANPA JAWATAN (KOD P)</span>
                     <span>PEMBERAT JAM</span>
@@ -679,7 +667,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                     </tbody>
                 </table>
 
-                <!-- 3. JAWATANKUASA SEKOLAH -->
                 <div class="section-bar">
                     <span>3. JAWATANKUASA SEKOLAH (KOD J)</span>
                     <span>PEMBERAT JAM</span>
@@ -690,7 +677,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                     </tbody>
                 </table>
 
-                <!-- JUMLAH BEBAN KERJA KESELURUHAN -->
                 <table style="width: 100%; font-size: 8.5pt; font-weight: bold; margin-top: 3px; margin-bottom: 4px; border-top: 1.5px solid #0f4c81; padding-top: 2px;">
                     <tr>
                         <td style="text-align: right; padding-right: 15px; color: #0f4c81;">JUMLAH BEBAN KERJA KESELURUHAN:</td>
@@ -700,7 +686,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             </div>
 
             <div>
-                <!-- KOTAK GABUNGAN LENGKAP KETETAPAN MYSG KPM -->
                 <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222; page-break-inside: avoid;">
                     <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px; text-transform: uppercase;">
                         📌 KETETAPAN & GARIS PANDUAN PENGIRAAN BEBAN KERJA (MYSG KPM)
