@@ -368,20 +368,16 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         p_dtl = str(staf_row.get(f"Detail_P_{idx_num}", '')).strip()
 
         if p_kod not in ["nan", "None", ""]:
-            # Ambil kod sahaja (cth: PR01)
             kod_only = p_kod.split('|')[0].strip()
             clean_p = kod_only.replace('PR', 'P').replace('PM', 'P')
             
-            from mysg_core import MYSG_PORTFOLIO_P
             name_only = MYSG_PORTFOLIO_P[clean_p][0] if clean_p in MYSG_PORTFOLIO_P else ""
             
-            # Jika ada nama rasmi, gabungkan semula tanpa mengulang
             if name_only:
                 label_p = f"{kod_only} | {name_only}"
             else:
                 label_p = p_kod
                 
-            # Hanya tunjuk details jika ia berbeza dengan nama tugas
             if p_dtl and str(p_dtl).lower() not in ["nan", "none", "-", "", name_only.lower(), label_p.lower()]:
                 dtl_str = f": {p_dtl}"
             else:
@@ -393,23 +389,25 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     if p_count == 1: 
         story.append(Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatan Tanpa Portfolio Ditetapkan</i>", bullet_style))
 
-    # 2.3 JAWATANKUASA 
+    # 2.3 JAWATANKUASA (GABUNGAN DATA MANUAL & SUNTIKAN MAYA)
     story.append(Spacer(1, 14))
     story.append(Paragraph("2.3. JAWATANKUASA:", body_style))
     
     j_cols = [c for c in staf_row.index if c.startswith('Kod_J_')]
     j_count = 1
+    printed_j_generics = set()
+    
+    # 2.3A - CETAK DATA DARI DATABASE (YANG DITAIP MANUAL)
     for col in j_cols:
         idx_num = col.split('_')[2]
         j_kod = str(staf_row.get(f"Kod_J_{idx_num}", '')).strip()
         j_dtl = str(staf_row.get(f"Detail_J_{idx_num}", '')).strip()
 
         if j_kod not in ["nan", "None", ""]:
-            # Ambil kod sahaja (cth: JR01)
             kod_only = j_kod.split('|')[0].strip().upper()
             j_clean = kod_only.replace('JR', 'J').replace('JM', 'J')
+            printed_j_generics.add(j_clean) # Tandakan sebagai sudah dicetak
             
-            from mysg_core import MYSG_JAWATANKUASA_J
             name_only = MYSG_JAWATANKUASA_J[j_clean][0] if j_clean in MYSG_JAWATANKUASA_J else ""
             
             if name_only:
@@ -417,7 +415,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             else:
                 label_j = j_kod
                 
-            # Hanya tunjuk details jika ia berbeza dengan nama JK
             if j_dtl and str(j_dtl).lower() not in ["nan", "none", "-", "", name_only.lower(), label_j.lower()]:
                 dtl_str = f": {j_dtl}"
             else:
@@ -428,6 +425,20 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.3.{j_count}. {label_j}{dtl_str}{diserap_label}", bullet_style))
             j_count += 1
             
+    # 2.3B - SUNTIKAN MAYA (VIRTUAL INJECTION) BAGI AJK YANG DISERAP TETAPI TIADA DALAM DB
+    prefix_j = "JM" if "Menengah" in jenis_sek else "JR"
+    for j_clean in absorbed_j_codes:
+        if j_clean not in printed_j_generics:
+            printed_j_generics.add(j_clean) # Tandakan supaya tak ulang
+            name_only = MYSG_JAWATANKUASA_J[j_clean][0] if j_clean in MYSG_JAWATANKUASA_J else ""
+            kod_display = j_clean.replace('J', prefix_j)
+            
+            label_j = f"{kod_display} | {name_only}"
+            diserap_label = " <font color='#c0392b'><i>(Diserap dalam tugas utama)</i></font>"
+            
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.3.{j_count}. {label_j}{diserap_label}", bullet_style))
+            j_count += 1
+
     if j_count == 1: 
         story.append(Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatankuasa Ditetapkan</i>", bullet_style))
 
@@ -445,6 +456,11 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph(p4, body_style))
     story.append(Spacer(1, 14))
     story.append(Paragraph(p5, body_style))
+    story.append(Spacer(1, 14))
+
+    # NOTA KAKI PENJELASAN
+    nota_kaki = "<b>Nota Penyelarasan Tugas:</b> Jawatankuasa yang bertanda <font color='#c0392b'><i>(Diserap dalam tugas utama)</i></font> bermaksud tuan/puan turut dilantik secara rasmi sebagai Ahli Jawatankuasa (AJK) bagi jawatankuasa tersebut. Walau bagaimanapun, peruntukan jam beban tugas bagi jawatankuasa ini telah dirangkumkan di dalam portfolio utama tuan/puan bagi mengelakkan pengiraan beban tugas berganda."
+    story.append(Paragraph(nota_kaki, ParagraphStyle('NotaKaki', parent=body_style, fontSize=9, leading=12)))
     story.append(Spacer(1, 14))
 
     story.append(Paragraph("Sekian, terima kasih.", body_style))
