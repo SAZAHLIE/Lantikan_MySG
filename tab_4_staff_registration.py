@@ -133,7 +133,6 @@ def render_tab_4(school_info):
                 for i in range(1, max_p + 1):
                     cp1, cp2 = st.columns([2, 2])
                     with cp1:
-                        # MENGGUNAKAN opts_p YANG DINAMIK
                         p_inputs[f'Kod_P_{i}'] = st.selectbox(f"Kod P_{i}:", options=opts_p, key=f"dyn_kod_p_{i}")
                     with cp2:
                         p_inputs[f'Detail_P_{i}'] = st.text_input(f"Butiran Detail P_{i}:", key=f"dyn_det_p_{i}")
@@ -146,7 +145,6 @@ def render_tab_4(school_info):
                 for i in range(1, max_j + 1):
                     cj1, cj2 = st.columns([2, 2])
                     with cj1:
-                        # MENGGUNAKAN opts_j YANG DINAMIK
                         j_inputs[f'Kod_J_{i}'] = st.selectbox(f"Kod J_{i}:", options=opts_j, key=f"dyn_kod_j_{i}")
                     with cj2:
                         j_inputs[f'Detail_J_{i}'] = st.text_input(f"Butiran Detail J_{i}:", key=f"dyn_det_j_{i}")
@@ -228,7 +226,6 @@ def render_tab_4(school_info):
                             "staff_name": nama_baharu.upper()
                         })
                         
-                        # NOTIFIKASI KEPADA PENGGUNA
                         st.toast(f"🎉 Kakitangan {nama_baharu.upper()} berjaya didaftarkan!", icon="✅")
                         st.success(f"✅ Kakitangan **{nama_baharu.upper()}** berjaya didaftarkan ke dalam sistem!")
                         time.sleep(1)
@@ -276,48 +273,57 @@ def render_tab_4(school_info):
 
             col_del_sel, col_del_btn = st.columns([2.5, 1.5])
 
+            # 1. Tapis senarai nama (buang nilai nan/kosong daripada tersenarai di dropdown)
+            senarai_nama_bersih = [nama for nama in df_staff['Nama'].dropna().tolist() if str(nama).strip().lower() not in ['nan', 'none', '']]
+
             with col_del_sel:
                 staf_to_remove = st.selectbox(
                     "Pilih Kakitangan untuk Dikeluarkan:", 
-                    options=df_staff['Nama'].tolist(), 
+                    options=senarai_nama_bersih, 
                     key="select_staf_remove"
                 )
 
-            row_to_remove = df_staff[df_staff['Nama'] == staf_to_remove].iloc[0]
-            st.caption(f"📌 **Profil Dipilih:** {row_to_remove.get('Nama')} | {row_to_remove.get('Jawatan')} ({row_to_remove.get('Kumpulan')})")
+            # 2. Semak dan panggil data profil jika padanan wujud
+            matched_staff = df_staff[df_staff['Nama'] == staf_to_remove]
+            
+            if not matched_staff.empty:
+                row_to_remove = matched_staff.iloc[0]
+                st.caption(f"📌 **Profil Dipilih:** {row_to_remove.get('Nama')} | {row_to_remove.get('Jawatan')} ({row_to_remove.get('Kumpulan')})")
 
-            with col_del_btn:
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                # KAWALAN AKSES (RBAC) - PIN PENGESAHAN
-                pin_pengesahan_2 = st.text_input("🔑 PIN Pentadbir:", type="password", key="pin_buang_staf")
-                
-                if st.button("🔴 Pengesahan Keluarkan Kakitangan", type="primary", use_container_width=True, key="btn_confirm_remove_staf"):
-                    if pin_pengesahan_2 != school_info.get('admin_pin', '1234'):
-                        st.error("🔒 PIN Pengesahan salah! Akses ditolak.")
-                    else:
-                        df_filtered_raw = df_staff[df_staff['Nama'] != staf_to_remove].reset_index(drop=True)
-
-                        if not df_filtered_raw.empty:
-                            df_recalculated = calculate_workload_df(df_filtered_raw, jenis_sek)
-                            st.session_state['staff_df'] = df_recalculated
+                with col_del_btn:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # KAWALAN AKSES (RBAC) - PIN PENGESAHAN
+                    pin_pengesahan_2 = st.text_input("🔑 PIN Pentadbir:", type="password", key="pin_buang_staf")
+                    
+                    if st.button("🔴 Pengesahan Keluarkan Kakitangan", type="primary", use_container_width=True, key="btn_confirm_remove_staf"):
+                        if pin_pengesahan_2 != school_info.get('admin_pin', '1234'):
+                            st.error("🔒 PIN Pengesahan salah! Akses ditolak.")
                         else:
-                            st.session_state['staff_df'] = pd.DataFrame()
+                            df_filtered_raw = df_staff[df_staff['Nama'] != staf_to_remove].reset_index(drop=True)
 
-                        st.session_state['data_version'] = int(time.time())
-                        
-                        # REKOD LOG AKTIVITI
-                        if 'audit_log' not in st.session_state:
-                            st.session_state['audit_log'] = []
-                        st.session_state['audit_log'].append({
-                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "action": "PENGELUARAN REKOD",
-                            "staff_name": staf_to_remove
-                        })
-                        
-                        st.toast(f"🗑️ Rekod {staf_to_remove} berjaya dikeluarkan!", icon="🗑️")
-                        st.success(f"✅ Rekod kakitangan **{staf_to_remove}** telah berjaya dikeluarkan.")
-                        time.sleep(1)
-                        st.rerun()
+                            if not df_filtered_raw.empty:
+                                df_recalculated = calculate_workload_df(df_filtered_raw, jenis_sek)
+                                st.session_state['staff_df'] = df_recalculated
+                            else:
+                                st.session_state['staff_df'] = pd.DataFrame()
+
+                            st.session_state['data_version'] = int(time.time())
+                            
+                            # REKOD LOG AKTIVITI
+                            if 'audit_log' not in st.session_state:
+                                st.session_state['audit_log'] = []
+                            st.session_state['audit_log'].append({
+                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "action": "PENGELUARAN REKOD",
+                                "staff_name": staf_to_remove
+                            })
+                            
+                            st.toast(f"🗑️ Rekod {staf_to_remove} berjaya dikeluarkan!", icon="🗑️")
+                            st.success(f"✅ Rekod kakitangan **{staf_to_remove}** telah berjaya dikeluarkan.")
+                            time.sleep(1)
+                            st.rerun()
+            else:
+                st.error("❌ Ralat: Sila pilih kakitangan yang sah dari senarai di atas.")
         else:
             st.info("ℹ️ Tiada rekod kakitangan ditemui untuk dikeluarkan.")
