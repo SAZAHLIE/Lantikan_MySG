@@ -406,7 +406,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         if j_kod not in ["nan", "None", ""]:
             kod_only = j_kod.split('|')[0].strip().upper()
             j_clean = kod_only.replace('JR', 'J').replace('JM', 'J')
-            printed_j_generics.add(j_clean) # Tandakan sebagai sudah dicetak
+            printed_j_generics.add(j_clean)
             
             name_only = MYSG_JAWATANKUASA_J[j_clean][0] if j_clean in MYSG_JAWATANKUASA_J else ""
             
@@ -429,7 +429,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     prefix_j = "JM" if "Menengah" in jenis_sek else "JR"
     for j_clean in absorbed_j_codes:
         if j_clean not in printed_j_generics:
-            printed_j_generics.add(j_clean) # Tandakan supaya tak ulang
+            printed_j_generics.add(j_clean)
             name_only = MYSG_JAWATANKUASA_J[j_clean][0] if j_clean in MYSG_JAWATANKUASA_J else ""
             kod_display = j_clean.replace('J', prefix_j)
             
@@ -458,11 +458,6 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph(p5, body_style))
     story.append(Spacer(1, 14))
 
-    # NOTA KAKI PENJELASAN
-    nota_kaki = "<b>Nota Penyelarasan Tugas:</b> Jawatankuasa yang bertanda <font color='#c0392b'><i>(Diserap dalam tugas utama)</i></font> bermaksud tuan/puan turut dilantik secara rasmi sebagai Ahli Jawatankuasa (AJK) bagi jawatankuasa tersebut. Walau bagaimanapun, peruntukan jam beban tugas bagi jawatankuasa ini telah dirangkumkan di dalam portfolio utama tuan/puan bagi mengelakkan pengiraan beban tugas berganda."
-    story.append(Paragraph(nota_kaki, ParagraphStyle('NotaKaki', parent=body_style, fontSize=9, leading=12)))
-    story.append(Spacer(1, 14))
-
     story.append(Paragraph("Sekian, terima kasih.", body_style))
     story.append(Spacer(1, 14))
 
@@ -480,6 +475,11 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph(f"<b>{nama_gb}</b>", bold_body))
     story.append(Paragraph(f"{gelaran_gb}", body_style))
     story.append(Paragraph(f"{nama_sekolah.title()}", body_style))
+
+    # NOTA KAKI PENJELASAN (DIPINDAHKAN KE BAWAH TANDATANGAN)
+    story.append(Spacer(1, 20))
+    nota_kaki = "<b>Nota Penyelarasan Tugas:</b> Jawatankuasa yang bertanda <font color='#c0392b'><i>(Diserap dalam tugas utama)</i></font> bermaksud tuan/puan turut dilantik secara rasmi sebagai Ahli Jawatankuasa (AJK) bagi jawatankuasa tersebut. Walau bagaimanapun, peruntukan jam beban tugas bagi jawatankuasa ini telah dirangkumkan di dalam portfolio utama tuan/puan bagi mengelakkan pengiraan beban tugas berganda."
+    story.append(Paragraph(nota_kaki, ParagraphStyle('NotaKaki', parent=body_style, fontSize=8.5, leading=11)))
 
     doc.build(story, canvasmaker=make_canvas)
     pdf_bytes = buffer.getvalue()
