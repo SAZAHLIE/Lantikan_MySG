@@ -11,7 +11,13 @@ from letterhead_template import (
     get_a4_print_css
 )
 from letter_footer import get_appointment_letter_footer_html
-from mysg_core import MYSG_PORTFOLIO_H_SM, MYSG_PORTFOLIO_H_SR, MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
+from mysg_core import (
+    MYSG_PORTFOLIO_H_SM, 
+    MYSG_PORTFOLIO_H_SR, 
+    MYSG_PORTFOLIO_P, 
+    MYSG_JAWATANKUASA_J,
+    MYSG_P_TO_J_AUTO_MAP
+)
 
 def get_malay_official_date():
     """Menjana tarikh rasmi format JPA/KPM Bahasa Melayu tanpa 'hb' dan bulan HURUF BESAR."""
@@ -20,7 +26,6 @@ def get_malay_official_date():
         5: "MEI", 6: "JUN", 7: "JULAI", 8: "OGOS",
         9: "SEPTEMBER", 10: "OKTOBER", 11: "NOVEMBER", 12: "DISEMBER"
     }
-    # Tetapan Zon Masa Malaysia (UTC+8)
     tz_malaysia = timezone(timedelta(hours=8))
     now = datetime.now(tz_malaysia)
     return f"{now.day} {bulan_dict[now.month]} {now.year}"
@@ -29,7 +34,6 @@ def get_malay_official_date():
 # HELPER FUNCTION: EKSTRAK DATA TERUS DARI LAJUR CSV 
 # -------------------------------------------------------------------
 def extract_pdp_from_row(staf_row):
-    """Menyemak dan membina senarai PdP terus dari lajur CSV Subjek_1 hingga Subjek_15"""
     new_list = []
     for i in range(1, 16):
         subjek = staf_row.get(f'Subjek_{i}')
@@ -46,7 +50,6 @@ def extract_pdp_from_row(staf_row):
     return new_list
 
 def extract_portfolio_from_row(staf_row):
-    """Menyemak dan membina senarai Portfolio (P) terus dari lajur Kod_P_1 hingga Kod_P_15"""
     new_list = []
     for i in range(1, 16):
         kod = staf_row.get(f'Kod_P_{i}')
@@ -58,7 +61,6 @@ def extract_portfolio_from_row(staf_row):
     return new_list
 
 def extract_jk_from_row(staf_row):
-    """Menyemak dan membina senarai Jawatankuasa (J) terus dari lajur Kod_J_1 hingga Kod_J_15"""
     new_list = []
     for i in range(1, 16):
         kod = staf_row.get(f'Kod_J_{i}')
@@ -70,7 +72,6 @@ def extract_jk_from_row(staf_row):
     return new_list
 
 def force_get_h_base_hours(staf_row, jenis_sekolah="Sekolah Rendah"):
-    """Dapatkan nilai jam 'Tapak Asas' bagi Portfolio Hakiki (Kod H)."""
     jam_h = staf_row.get('JUMLAH_JAM_PORTFOLIO_H', None)
     if pd.notna(jam_h):
         try:
@@ -86,7 +87,6 @@ def force_get_h_base_hours(staf_row, jenis_sekolah="Sekolah Rendah"):
 
 
 def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
-    """Menjana HTML Surat Lantikan Tugas Rasmi."""
     if not isinstance(school_info, dict):
         school_info = {}
 
@@ -95,7 +95,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     css_theme = get_a4_print_css(orientation='portrait')
 
     nama = str(staf_row.get('Nama', 'ABDUL SABAH @ MOHD SABA B MOHD')).upper()
-    
     ic_no = str(staf_row.get('No_KP', '-')).replace('nan', '-').replace('None', '-')
     if not ic_no or ic_no == 'nan':
         ic_no = '-'
@@ -129,10 +128,8 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
         for idx, item in enumerate(p_list, start=1):
             kod_p = item.get('kod', 'P')
             perincian_p = item.get('perincian', '-')
-            
             label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(kod_p, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
             dtl_str = f": {perincian_p}" if perincian_p and perincian_p != label_p and perincian_p not in label_p else ""
-            
             p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {label_p}{dtl_str}</div>"
     else:
         p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.1. Tiada Portfolio Ditetapkan</div>"
@@ -143,10 +140,8 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
         for idx, item in enumerate(j_list, start=1):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
-            
             label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_j, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
             dtl_str = f": {perincian_j}" if perincian_j and perincian_j != label_j and perincian_j not in label_j else ""
-            
             j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {label_j}{dtl_str}</div>"
     else:
         j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.1. Tiada Jawatankuasa Ditetapkan</div>"
@@ -317,7 +312,6 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
 
 
 def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_staff=None, *args, **kwargs):
-    """Menjana LAPORAN PERINCIAN BEBAN TUGAS INDIVIDU (Strict Fit 1 Page A4 Portrait)."""
     if not isinstance(school_info, dict):
         school_info = {}
 
@@ -341,7 +335,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     tahun_sesi = str(school_info.get('tahun_sesi', '2027'))
     kod_sekolah = str(school_info.get('kod_sekolah', 'XBA2004')).upper()
     
-    # Tetapan Zon Masa Malaysia (UTC+8) untuk tarikh cetakan laporan
     tz_malaysia = timezone(timedelta(hours=8))
     tarikh_hari = datetime.now(tz_malaysia).strftime("%d/%m/%Y %I:%M %p")
 
@@ -448,27 +441,46 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         </tr>
         """
 
+    # LOGIK VISUAL MERAH UNTUK JAWATANKUASA (DISERAP)
+    absorbed_j_codes = []
+    p_cols = [c for c in staf_row.index if str(c).startswith('Kod_P_')]
+    for pc in p_cols:
+        p_raw = str(staf_row.get(pc, '')).strip()
+        if p_raw and p_raw.lower() not in ['', 'nan', 'none', '-']:
+            clean_p = p_raw.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
+            if clean_p in MYSG_P_TO_J_AUTO_MAP:
+                absorbed_j_codes.extend(MYSG_P_TO_J_AUTO_MAP[clean_p])
+
     rows_j_html = ""
     j_list = extract_jk_from_row(staf_row)
     if len(j_list) > 0:
         for idx_j, item in enumerate(j_list):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
-            try:
-                jam_val = float(item.get('jam', 1.0))
-            except (ValueError, TypeError):
-                jam_val = 0.0
-                
-            jam_val = round(jam_val, 1)
-            bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
             
-            label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_j, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
+            kod_clean = kod_j.split('|')[0].strip().upper()
+            kod_generik = kod_clean.replace('JR', 'J').replace('JM', 'J')
+            nilai_asal = float(MYSG_JAWATANKUASA_J.get(kod_generik, ("", 1.0))[1])
+            
+            # Semak jika Jawatankuasa diserap oleh Pakej Portfolio
+            if kod_generik in absorbed_j_codes:
+                paparan_jam_html = f"<span style='text-decoration: line-through; color: #888;'>{nilai_asal:.1f} jam</span><br><span style='color: #c0392b; font-weight: bold; font-size: 7.5pt;'>0.0 jam (Diserap)</span>"
+            else:
+                try:
+                    jam_val = float(item.get('jam', 1.0))
+                except (ValueError, TypeError):
+                    jam_val = 0.0
+                jam_val = round(jam_val, 1)
+                paparan_jam_html = f"<span style='color: #2b579a; font-weight: bold;'>{jam_val:.1f} jam</span>"
+                
+            bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
+            label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_generik, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
             dtl_str = f": {perincian_j}" if perincian_j and perincian_j != label_j and perincian_j not in label_j else ""
             
             rows_j_html += f"""
-            <tr style="background-color: {bg_color};">
-                <td style="padding-left: 12px;">• &nbsp; <b>{label_j}</b>{dtl_str}</td>
-                <td style="text-align: right; font-weight: bold; color: #2b579a;">{jam_val:.1f} jam</td>
+            <tr style="background-color: {bg_color}; border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 4px 4px 4px 12px;">• &nbsp; <b>{label_j}</b>{dtl_str}</td>
+                <td style="text-align: right; padding: 4px 4px; width: 20%; line-height: 1.25;">{paparan_jam_html}</td>
             </tr>
             """
     else:
@@ -587,10 +599,6 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                 margin-bottom: 4px;
                 page-break-inside: avoid;
             }}
-            .detail-table td {{
-                padding: 2px 4px;
-                border-bottom: 1px solid #f0f0f0;
-            }}
 
             .print-footer-container {{
                 margin-top: 12px;
@@ -617,9 +625,9 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                     <tr>
                         <td style="width: 58%; text-align: left;">
                             <b>Nama Pegawai:</b> {nama}<br>
+                            <b>No. KP:</b> {ic_no}<br>
                             <b>Jawatan Hakiki:</b> {jawatan_hakiki}<br>
-                            <b>Gred Perkhidmatan:</b> {gred_show}<br>
-                            <b>No. KP:</b> {ic_no}
+                            <b>Gred Perkhidmatan:</b> {gred_show}
                         </td>
                         <td style="width: 42%; text-align: left;">
                             <b>Kumpulan:</b> {kump_staf}<br>
@@ -697,9 +705,9 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; margin-bottom: 4px; font-weight: 500;">
                         <div>• <b>Masa Asas 45 Jam:</b> Ditetapkan JPA selaras dengan <i>International Labour Organization</i> (ILO).</div>
-                        <div>• <b>Pelaksanaan Masa 45 Jam (PGB & AKP):</b> Berdasarkan waktu bekerja pejabat (38 jam 30 minit bekerja + 6 jam 30 minit rehat).</div>
-                        <div>• <b>Pelaksanaan Masa 45 Jam (Guru):</b> Gabungan Waktu Persekolahan (PdP & Bukan PdP) + Luar Waktu Persekolahan (Kokurikulum & Lain-lain/Rencam).</div>
-                        <div>• <b>Tugasan Cuti Sekolah:</b> PGB boleh mengarahkan guru bertugas cuti sekolah maksimum separuh daripada jumlah hari cuti (Maks. 22 Hari/Tahun).</div>
+                        <div>• <b>Pelaksanaan Masa (PGB & AKP):</b> Berdasarkan waktu bekerja pejabat (38 jam 30 min bekerja + 6 jam 30 min rehat).</div>
+                        <div>• <b>Pelaksanaan Masa (Guru):</b> Gabungan Waktu Persekolahan (PdP & Bukan) + Luar Waktu (Kokurikulum & Lain-lain).</div>
+                        <div>• <b>Tugasan Cuti Sekolah:</b> PGB boleh mengarahkan guru bertugas cuti sekolah maks separuh dari cuti (Maks. 22 Hari/Tahun).</div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px;">
@@ -712,7 +720,7 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
 
                 <div class="print-footer-container">
                     <div><i>Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: <b>{tarikh_hari}</b></i></div>
-                    <div style="white-space: nowrap; font-weight: bold;">[ Halaman 1 daripada 1 ]</div>
+                    <div style="white-space: nowrap; font-weight: bold;">[ 1 daripada 1 ]</div>
                 </div>
             </div>
         </div>
