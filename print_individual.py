@@ -296,7 +296,7 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
     else:
         badge_status = '<span style="background-color: #e1effe; color: #1e429f; padding: 2px 6px; border-radius: 10px; font-weight: bold; font-size: 7.5pt;">🔵 RINGAN</span>'
 
-    rows_h_html = f"""<tr style="background-color: #fafafa;"><td style="padding-left: 12px;">• &nbsp; <b>{jawatan_hakiki}</b> <span style="color: #666; font-size: 7.5pt;">(Masa Pengurusan Hakiki / Persediaan)</span></td><td style="text-align: right; font-weight: bold; width: 20%; color: #0f4c81;">{jam_tapak_asas:.1f} jam</td></tr>"""
+    rows_h_html = f"""<tr style="background-color: #fafafa;"><td style="padding-left: 12px;">• &nbsp; <b>{jawatan_hakiki}</b> <span style="color: #666; font-size: 7pt;">(Masa Pengurusan Hakiki / Persediaan)</span></td><td style="text-align: right; font-weight: bold; width: 20%; color: #0f4c81;">{jam_tapak_asas:.1f} jam</td></tr>"""
     
     pdp_list = extract_pdp_from_row(staf_row)
     kadar_pdp_jam = 40.0 / 60.0 if "Menengah" in jenis_sek else 30.0 / 60.0
@@ -346,13 +346,13 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             
             nilai_asal = float(MYSG_JAWATANKUASA_J.get(kod_generik, ("", 1.0))[1])
             if kod_generik in absorbed_j_codes:
-                paparan_jam_html = f"<span style='text-decoration: line-through; color: #888;'>{nilai_asal:.1f} jam</span><br><span style='color: #c0392b; font-weight: bold; font-size: 7.5pt;'>0.0 jam (Diserap)</span>"
+                paparan_jam_html = f"<span style='text-decoration: line-through; color: #888;'>{nilai_asal:.1f} jam</span><br><span style='color: #c0392b; font-weight: bold; font-size: 7pt;'>0.0 jam (Diserap)</span>"
             else:
                 jam_val = round(float(item.get('jam', 1.0)), 1)
                 paparan_jam_html = f"<span style='color: #2b579a; font-weight: bold;'>{jam_val:.1f} jam</span>"
                 
             bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
-            rows_j_html += f"""<tr style="background-color: {bg_color}; border-bottom: 1px solid #f0f0f0;"><td style="padding: 4px 4px 4px 12px;">• &nbsp; <b>{label_j}</b>{dtl_str}</td><td style="text-align: right; padding: 4px 4px; width: 20%; line-height: 1.25;">{paparan_jam_html}</td></tr>"""
+            rows_j_html += f"""<tr style="background-color: {bg_color}; border-bottom: 1px solid #f0f0f0;"><td style="padding: 2px 4px 2px 12px;">• &nbsp; <b>{label_j}</b>{dtl_str}</td><td style="text-align: right; padding: 2px 4px; width: 20%; line-height: 1.2;">{paparan_jam_html}</td></tr>"""
             idx_j += 1
 
     # SUNTIKAN MAYA 
@@ -364,9 +364,9 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             label_j = f"{kod_display} | {name_only}"
             nilai_asal = float(MYSG_JAWATANKUASA_J.get(j_clean, ("", 1.0))[1])
             
-            paparan_jam_html = f"<span style='text-decoration: line-through; color: #888;'>{nilai_asal:.1f} jam</span><br><span style='color: #c0392b; font-weight: bold; font-size: 7.5pt;'>0.0 jam (Diserap)</span>"
+            paparan_jam_html = f"<span style='text-decoration: line-through; color: #888;'>{nilai_asal:.1f} jam</span><br><span style='color: #c0392b; font-weight: bold; font-size: 7pt;'>0.0 jam (Diserap)</span>"
             bg_color = "#ffffff" if idx_j % 2 == 0 else "#fbfcfd"
-            rows_j_html += f"""<tr style="background-color: {bg_color}; border-bottom: 1px solid #f0f0f0;"><td style="padding: 4px 4px 4px 12px;">• &nbsp; <b>{label_j}</b></td><td style="text-align: right; padding: 4px 4px; width: 20%; line-height: 1.25;">{paparan_jam_html}</td></tr>"""
+            rows_j_html += f"""<tr style="background-color: {bg_color}; border-bottom: 1px solid #f0f0f0;"><td style="padding: 2px 4px 2px 12px;">• &nbsp; <b>{label_j}</b></td><td style="text-align: right; padding: 2px 4px; width: 20%; line-height: 1.2;">{paparan_jam_html}</td></tr>"""
             idx_j += 1
 
     if idx_j == 0:
@@ -380,20 +380,21 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
         <title>Laporan Perincian Beban Tugas Individu - {nama}</title>
         <style>
             {css_theme}
-            @page {{ size: A4 portrait; margin: 0.5cm 1.0cm 0.5cm 1.0cm; }}
-            html, body {{ height: 100%; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; color: #222; margin: 0; padding: 0; }}
+            @page {{ size: A4 portrait; margin: 0.4cm 1.0cm 0.4cm 1.0cm; }}
+            html, body {{ height: 100%; font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #222; margin: 0; padding: 0; line-height: 1.25; }}
             .page-container {{ display: flex; flex-direction: column; justify-content: space-between; min-height: 98vh; box-sizing: border-box; page-break-inside: avoid; }}
-            .doc-title {{ border: 1.5px solid #0f4c81; border-radius: 4px; font-weight: bold; font-size: 10pt; text-align: center; text-transform: uppercase; padding: 4px; margin-bottom: 6px; background-color: #f0f4f8; color: #0f4c81; letter-spacing: 0.5px; }}
-            .header-info-table {{ width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 6px; }}
-            .header-info-table td {{ padding: 2px 4px; vertical-align: top; }}
-            .metric-container {{ display: flex; border: 1px solid #d0e1fd; background-color: #f8fbff; border-radius: 4px; margin-bottom: 8px; padding: 4px 0; }}
+            .doc-title {{ border: 1.5px solid #0f4c81; border-radius: 4px; font-weight: bold; font-size: 9pt; text-align: center; text-transform: uppercase; padding: 3px; margin-bottom: 4px; background-color: #f0f4f8; color: #0f4c81; letter-spacing: 0.5px; }}
+            .header-info-table {{ width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 4px; }}
+            .header-info-table td {{ padding: 1px 4px; vertical-align: top; }}
+            .metric-container {{ display: flex; border: 1px solid #d0e1fd; background-color: #f8fbff; border-radius: 4px; margin-bottom: 6px; padding: 3px 0; }}
             .metric-box {{ flex: 1; text-align: center; border-right: 1px solid #d0e1fd; }}
             .metric-box:last-child {{ border-right: none; }}
-            .metric-label {{ font-size: 7.5pt; color: #555; font-weight: bold; margin-bottom: 1px; text-transform: uppercase; }}
-            .metric-value {{ font-size: 11.5pt; font-weight: bold; color: #0f4c81; }}
-            .section-bar {{ background-color: #e8f1f5; color: #0f4c81; font-weight: bold; font-size: 8pt; padding: 3px 8px; border-top: 1px solid #b8d4e3; border-bottom: 1px solid #b8d4e3; border-radius: 2px; text-transform: uppercase; display: flex; justify-content: space-between; margin-top: 2px; }}
-            .detail-table {{ width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 4px; page-break-inside: avoid; }}
-            .print-footer-container {{ margin-top: 12px; border-top: 1px solid #ccc; padding-top: 4px; font-size: 8pt; color: #555; display: flex; justify-content: space-between; font-family: Arial, sans-serif; }}
+            .metric-label {{ font-size: 7pt; color: #555; font-weight: bold; margin-bottom: 1px; text-transform: uppercase; }}
+            .metric-value {{ font-size: 11pt; font-weight: bold; color: #0f4c81; }}
+            .section-bar {{ background-color: #e8f1f5; color: #0f4c81; font-weight: bold; font-size: 7.5pt; padding: 2px 6px; border-top: 1px solid #b8d4e3; border-bottom: 1px solid #b8d4e3; border-radius: 2px; text-transform: uppercase; display: flex; justify-content: space-between; margin-top: 2px; }}
+            .detail-table {{ width: 100%; border-collapse: collapse; font-size: 7.5pt; margin-bottom: 2px; page-break-inside: avoid; }}
+            .detail-table td {{ padding: 1px 4px; border-bottom: 1px solid #f0f0f0; }}
+            .print-footer-container {{ margin-top: 8px; border-top: 1px solid #ccc; padding-top: 4px; font-size: 7.5pt; color: #555; display: flex; justify-content: space-between; font-family: Arial, sans-serif; }}
         </style>
     </head>
     <body>
@@ -410,21 +411,21 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                     <div class="metric-box"><div class="metric-label">Purata Kumpulan ({kump_staf})</div><div class="metric-value" style="color: #2b579a;">{purata_kumpulan:.1f} Jam</div><div style="font-size: 7pt; color: #777;">Penanda Aras Ideal MySG</div></div>
                     <div class="metric-box"><div class="metric-label">Kedudukan / Perbezaan</div><div class="metric-value" style="color: {color_diff};">{diff_text}</div><div style="font-size: 7pt; color: #777;">Variasi Agihan Tugas</div></div>
                 </div>
-                <div style="font-weight: bold; font-size: 8pt; margin-bottom: 2px; color: #0f4c81; text-transform: uppercase;">📋 SENARAI PERINCIAN AGIHAN TUGAS & PEMBERAT (JAM):</div>
+                <div style="font-weight: bold; font-size: 7.5pt; margin-bottom: 2px; color: #0f4c81; text-transform: uppercase;">📋 SENARAI PERINCIAN AGIHAN TUGAS & PEMBERAT (JAM):</div>
                 <div class="section-bar"><span>1. PORTFOLIO BERJAWATAN HAKIKI (KOD H) & PENGAJARAN DAN PEMBELAJARAN (PDP)</span><span>PEMBERAT JAM</span></div>
                 <table class="detail-table"><tbody>{rows_h_html}</tbody></table>
                 <div class="section-bar"><span>2. PORTFOLIO TANPA JAWATAN (KOD P)</span><span>PEMBERAT JAM</span></div>
                 <table class="detail-table"><tbody>{rows_p_html}</tbody></table>
                 <div class="section-bar"><span>3. JAWATANKUASA SEKOLAH (KOD J)</span><span>PEMBERAT JAM</span></div>
                 <table class="detail-table"><tbody>{rows_j_html}</tbody></table>
-                <table style="width: 100%; font-size: 8.5pt; font-weight: bold; margin-top: 3px; margin-bottom: 4px; border-top: 1.5px solid #0f4c81; padding-top: 2px;">
-                    <tr><td style="text-align: right; padding-right: 15px; color: #0f4c81;">JUMLAH BEBAN KERJA KESELURUHAN:</td><td style="width: 22%; text-align: right; color: #0f4c81; font-size: 9.5pt;">{total_jam:.1f} JAM</td></tr>
+                <table style="width: 100%; font-size: 8pt; font-weight: bold; margin-top: 2px; margin-bottom: 4px; border-top: 1.5px solid #0f4c81; padding-top: 2px;">
+                    <tr><td style="text-align: right; padding-right: 15px; color: #0f4c81;">JUMLAH BEBAN KERJA KESELURUHAN:</td><td style="width: 22%; text-align: right; color: #0f4c81; font-size: 9pt;">{total_jam:.1f} JAM</td></tr>
                 </table>
             </div>
             <div>
-                <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 6px 10px; font-size: 7.5pt; line-height: 1.35; margin-top: 8px; color: #222; page-break-inside: avoid;">
-                    <div style="font-weight: bold; color: #c0392b; margin-bottom: 4px; text-transform: uppercase;">📌 KETETAPAN & GARIS PANDUAN PENGIRAAN BEBAN KERJA (MYSG KPM)</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px; margin-bottom: 4px; font-weight: 500;">
+                <div style="border: 1px dashed #0f4c81; background-color: #fcfdfe; border-radius: 4px; padding: 4px 8px; font-size: 7pt; line-height: 1.3; margin-top: 4px; color: #222; page-break-inside: avoid;">
+                    <div style="font-weight: bold; color: #c0392b; margin-bottom: 2px; text-transform: uppercase;">📌 KETETAPAN & GARIS PANDUAN PENGIRAAN BEBAN KERJA (MYSG KPM)</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 2px; margin-bottom: 2px; font-weight: 500;">
                         <div>• <b>Masa Asas 45 Jam:</b> Ditetapkan JPA selaras dengan <i>International Labour Organization</i> (ILO).</div>
                         <div>• <b>Pelaksanaan Masa (PGB & AKP):</b> Berdasarkan waktu bekerja pejabat (38 jam 30 min bekerja + 6 jam 30 min rehat).</div>
                         <div>• <b>Pelaksanaan Masa (Guru):</b> Gabungan Waktu Persekolahan (PdP & Bukan) + Luar Waktu (Kokurikulum & Lain-lain).</div>
@@ -436,7 +437,7 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                         <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP untuk menampung masa pengurusan hakiki.</div>
                         <div>• <b>4. AKP:</b> Masa kerja pejabat operasi (40.0 Jam/Minggu). Beban sampingan (Kod P/J) terhad.</div>
                     </div>
-                    <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dotted #ccc; font-style: italic; color: #c0392b;">
+                    <div style="margin-top: 4px; padding-top: 3px; border-top: 1px dotted #ccc; font-style: italic; color: #c0392b;">
                         * <b>Penyelarasan Jam (Diserap):</b> Label <b>0.0 jam (Diserap)</b> bermaksud peruntukan masa bagi jawatankuasa tersebut telah pun dirangkumkan secara automatik di dalam pakej jam portfolio utama (seperti Guru Kelas / Ketua Panitia / Penyelaras) bagi mengelakkan pengiraan beban berganda (double-counting).
                     </div>
                 </div>
