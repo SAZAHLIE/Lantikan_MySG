@@ -170,7 +170,7 @@ MYSG_PORTFOLIO_P = {
     "P17": ("Setiausaha Sukan", 5.0),
     "P18": ("Penyelaras Unit-Unit Kokurikulum", 2.5),
     "P19": ("Guru Penasihat Unit-Unit Kokurikulum", 2.5),
-    "P30": ("Penyelaras Unit-Unit Lain", 2.5) # Tambahan untuk menyokong entri custom seperti Penyelaras Kem Bestari Solat
+    "P30": ("Penyelaras Unit-Unit Lain", 2.5)
 }
 
 # MAPPING JAWATANKUASA J DENGAN PEMBERAT ANALITIKAL
@@ -199,6 +199,34 @@ MYSG_JAWATANKUASA_J = {
     "J22": ("JK Pembangunan Sukan Sekolah", 1.5),
     "J23": ("JK Sukan Tahunan Sekolah", 1.0)
 }
+
+# ========================================================================
+# PEMETAAN AUTO-BINDING KOD P KEPADA KOD J (MENGELAKKAN DOUBLE-COUNTING)
+# Berdasarkan format kod generik P dan J yang dikendalikan oleh enjin 
+# ========================================================================
+MYSG_P_TO_J_AUTO_MAP = {
+    "P01": ["J16", "J19"],          # Guru Kelas -> JK HEM, JK B&K
+    "P08": ["J04", "J08", "J15"],   # Ketua Panitia -> JK Kewangan, JK Bencana, JK PSS/Sumber
+    "P18": ["J21", "J22"],          # Penyelaras Kokurikulum -> JK Koko, JK Sukan
+    "P19": ["J21", "J22"]           # Penasihat Kokurikulum -> JK Koko, JK Sukan
+}
+
+def inject_auto_jawatankuasa(p_codes_list, current_j_codes_list):
+    """
+    Menyemak senarai Kod P semasa dan memasukkan Kod J yang berkaitan secara automatik
+    jika ia belum wujud dalam senarai Kod J guru tersebut. Digunakan di borang UI.
+    """
+    updated_j_codes = list(current_j_codes_list)
+    for p_code in p_codes_list:
+        clean_p = p_code.replace('PR', 'P').replace('PM', 'P')
+        if clean_p in MYSG_P_TO_J_AUTO_MAP:
+            tied_j_codes = MYSG_P_TO_J_AUTO_MAP[clean_p]
+            for j_code in tied_j_codes:
+                if j_code not in updated_j_codes:
+                    updated_j_codes.append(j_code)
+                    
+    updated_j_codes = [j for j in updated_j_codes if j]
+    return updated_j_codes[:15]
 
 def determine_kategori_staf(row):
     """
@@ -282,7 +310,7 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
             kod_raw = str(row.get(pc, '')).strip()
             if is_empty_val(kod_raw):
                 continue
-            mapped_kod = kod_raw.split('|')[0].strip().upper().replace('PR', 'P').replace('PM', 'P')
+            mapped_kod = extract_code(kod_raw).replace('PR', 'P').replace('PM', 'P')
             if mapped_kod in MYSG_PORTFOLIO_P:
                 total_p += MYSG_PORTFOLIO_P[mapped_kod][1]
             elif mapped_kod:
@@ -291,15 +319,36 @@ def calculate_workload_df(df, jenis_sekolah="Sekolah Rendah"):
 
     df_out['JUMLAH_JAM_PORTFOLIO_P'] = df_out.apply(get_jam_p, axis=1) if p_cols else 0.0
 
-    # 5. Hitung Jam Jawatankuasa J
+    # 5. Hitung Jam Jawatankuasa J (Dengan Logik Anti-Double-Count)
     j_cols = [c for c in df_out.columns if c.startswith('Kod_J_')]
     def get_jam_j(row):
         total_j = 0.0
+        
+        # Dapatkan senarai Kod P generik semasa
+        current_p_codes = []
+        for pc in p_cols:
+            p_raw = str(row.get(pc, '')).strip()
+            if not is_empty_val(p_raw):
+                mapped_p = extract_code(p_raw).replace('PR', 'P').replace('PM', 'P')
+                current_p_codes.append(mapped_p)
+                
+        # Dapatkan senarai Kod J generik yang 'diserap' oleh Pakej Kod P
+        absorbed_j_codes = []
+        for p_code in current_p_codes:
+            if p_code in MYSG_P_TO_J_AUTO_MAP:
+                absorbed_j_codes.extend(MYSG_P_TO_J_AUTO_MAP[p_code])
+
         for jc in j_cols:
             kod_raw = str(row.get(jc, '')).strip()
             if is_empty_val(kod_raw):
                 continue
-            mapped_kod = kod_raw.split('|')[0].strip().upper().replace('JR', 'J').replace('JM', 'J')
+            
+            mapped_kod = extract_code(kod_raw).replace('JR', 'J').replace('JM', 'J')
+            
+            # LOGIK PENTING: Sifarkan jam jika Kod J diserap dalam pakej Kod P
+            if mapped_kod in absorbed_j_codes:
+                continue
+                
             if mapped_kod in MYSG_JAWATANKUASA_J:
                 total_j += MYSG_JAWATANKUASA_J[mapped_kod][1]
             elif mapped_kod:
