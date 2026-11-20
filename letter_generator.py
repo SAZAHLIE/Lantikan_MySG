@@ -34,14 +34,14 @@ def mask_ic_number(ic_str):
     if not ic_str or ic_str in ["nan", "None", "-"]:
         return "-"
     ic_str = str(ic_str).replace("-", "").strip()
-            if len(ic_str) == 12:
-                # Memaparkan nombor KP penuh: 6 digit awal - 2 digit tengah - 4 digit akhir
-                return f"{ic_str[:6]}-{ic_str[6:8]}-{ic_str[8:]}"
-            # Jika nombor KP tidak cukup 12 digit, paparkan sahaja nombor asal yang dimasukkan
-            return ic_str
+    if len(ic_str) == 12:
+        # Memaparkan nombor KP penuh: 6 digit awal - 2 digit tengah - 4 digit akhir
+        return f"{ic_str[:6]}-{ic_str[6:8]}-{ic_str[8:]}"
+    # Jika nombor KP tidak cukup 12 digit, paparkan sahaja nombor asal yang dimasukkan
+    return ic_str
 
 def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
-    from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
+    from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J, MYSG_P_TO_J_AUTO_MAP
 
     # 1. MAKLUMAT SEKOLAH & HEADER
     nama_sekolah = str(school_info.get('nama_sekolah', 'SEKOLAH KEBANGSAAN BANDAR SANDAKAN')).upper()
@@ -76,9 +76,7 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
     # 4. MAKLUMAT STAF
     nama_staf = str(staf_row.get('Nama', '')).upper()
     raw_kp = str(staf_row.get('No_KP', '')).strip()
-    # LAKSANAKAN DATA MASKING (PDPA)
     no_kp = mask_ic_number(raw_kp)
-
     tarikh_hari_ini = format_tarikh_melayu(datetime.date.today())
 
     if not no_rujukan:
@@ -119,17 +117,25 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
             """
             sub_count += 1
 
-    # 7. PORTFOLIO P
+    # 7. PORTFOLIO P (DENGAN LOGIK MENGESAN JAWATANKUASA DISERAP)
     p_cols = [c for c in staf_row.index if c.startswith('Kod_P_')]
     p_items_html = ""
     p_count = 1
+    absorbed_j_codes = [] # Menyimpan rekod JK yang akan diserap
+    
     for col in p_cols:
         idx_num = col.split('_')[2]
         p_kod = str(staf_row.get(f"Kod_P_{idx_num}", '')).strip()
         p_dtl = str(staf_row.get(f"Detail_P_{idx_num}", '')).strip()
 
         if p_kod not in ["nan", "None", ""]:
-            label_p = f"{p_kod} | {MYSG_PORTFOLIO_P[p_kod][0]}" if p_kod in MYSG_PORTFOLIO_P else p_kod
+            p_clean = p_kod.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
+            
+            # Kumpulkan Kod J yang terserap oleh pakej ini
+            if p_clean in MYSG_P_TO_J_AUTO_MAP:
+                absorbed_j_codes.extend(MYSG_P_TO_J_AUTO_MAP[p_clean])
+                
+            label_p = f"{p_kod} | {MYSG_PORTFOLIO_P[p_clean][0]}" if p_clean in MYSG_PORTFOLIO_P else p_kod
             dtl_str = f": {p_dtl}" if p_dtl and p_dtl not in ["nan", "None", label_p] else ""
             p_items_html += f"""
             <div style="margin-left: 20px; margin-top: 2px; font-size: 13px; color: #1e293b;">
@@ -141,7 +147,7 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
     if not p_items_html:
         p_items_html = '<div style="margin-left: 20px; font-style: italic; color: #64748b; font-size: 12.5px;">Tiada Jawatan Tanpa Portfolio Ditetapkan</div>'
 
-    # 8. JAWATANKUASA J
+    # 8. JAWATANKUASA J (DENGAN PENANDA (DISERAP))
     j_cols = [c for c in staf_row.index if c.startswith('Kod_J_')]
     j_items_html = ""
     j_count = 1
@@ -151,11 +157,17 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
         j_dtl = str(staf_row.get(f"Detail_J_{idx_num}", '')).strip()
 
         if j_kod not in ["nan", "None", ""]:
-            label_j = f"{j_kod} | {MYSG_JAWATANKUASA_J[j_kod][0]}" if j_kod in MYSG_JAWATANKUASA_J else j_kod
+            j_clean = j_kod.split('|')[0].strip().replace('JR', 'J').replace('JM', 'J')
+            
+            label_j = f"{j_kod} | {MYSG_JAWATANKUASA_J[j_clean][0]}" if j_clean in MYSG_JAWATANKUASA_J else j_kod
             dtl_str = f": {j_dtl}" if j_dtl and j_dtl not in ["nan", "None", label_j] else ""
+            
+            # Jika Jawatankuasa ini termasuk dalam rantaian pakej utama, tambah nota
+            diserap_label = " <span style='color: #c0392b; font-style: italic; font-size: 12px;'>(Diserap dalam tugas utama)</span>" if j_clean in absorbed_j_codes else ""
+            
             j_items_html += f"""
             <div style="margin-left: 20px; margin-top: 2px; font-size: 13px; color: #1e293b;">
-                <b>2.3.{j_count}.</b> <b>{label_j}</b>{dtl_str}
+                <b>2.3.{j_count}.</b> <b>{label_j}</b>{dtl_str}{diserap_label}
             </div>
             """
             j_count += 1
@@ -179,19 +191,14 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
         <!-- HEADER KEPALA SURAT RASMI KPM -->
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px;">
             <tr>
-                <!-- JATA NEGARA (KIRI SAHAJA) -->
                 <td style="width: 12%; text-align: left; vertical-align: middle;">
                     {jata_img_html}
                 </td>
-                
-                <!-- NAMA KPM & SEKOLAH (TENGAH) -->
                 <td style="width: 55%; text-align: left; vertical-align: middle; padding-left: 8px;">
                     <div style="font-size: 13.5px; font-weight: 800; color: #000; font-family: Arial, sans-serif; text-transform: uppercase;">KEMENTERIAN PENDIDIKAN MALAYSIA</div>
                     <div style="font-size: 13.5px; font-weight: 800; color: #000; font-family: Arial, sans-serif; text-transform: uppercase; margin: 2px 0;">{nama_sekolah}</div>
                     <div style="font-size: 10.5px; color: #333; font-family: Arial, sans-serif;">{alamat_sekolah}</div>
                 </td>
-                
-                <!-- TEL/FAKS/EMEL & LENCANA SEKOLAH (KANAN SAHAJA) -->
                 <td style="width: 33%; text-align: right; vertical-align: middle;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
@@ -209,7 +216,6 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
             </tr>
         </table>
 
-        <!-- RUJUKAN & TARIKH -->
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12.5px;">
             <tr>
                 <td style="width: 58%;"></td>
@@ -223,7 +229,6 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
             </tr>
         </table>
 
-        <!-- MAKLUMAT PENERIMA -->
         <div style="margin-bottom: 12px; font-size: 13.5px;">
             <div style="font-weight: 800; color: #000; font-size: 14.5px;">{nama_staf}</div>
             <div style="color: #475569; font-size: 12.5px;">No. KP: {no_kp}</div>
@@ -231,7 +236,6 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
 
         <div style="font-size: 13px; margin-bottom: 12px;">Tuan / Puan,</div>
 
-        <!-- TAJUK SURAT -->
         <div style="font-size: 13.5px; font-weight: 800; color: #000; text-transform: uppercase; margin-bottom: 10px; line-height: 1.35;">
             LANTIKAN DAN AGIHAN TUGAS BAGI SESI PERSEKOLAHAN TAHUN {tahun_sesi}
         </div>
@@ -244,7 +248,6 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
             2. Sukacita dimaklumkan bahawa pihak sekolah melantik tuan/puan untuk memegang jawatan dan melaksanakan amanah seperti butiran di bawah berkuat kuasa mulai tarikh surat ini dikeluarkan sehingga ke suatu tarikh yang dimaklumkan kemudian:
         </p>
 
-        <!-- KOTAK SENARAI TUGAS -->
         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
             <div style="font-size: 13px; font-weight: bold; color: #0f172a; margin-bottom: 4px;">
                 2.1. JAWATAN BERPORTFOLIO: <span style="font-weight: bold; color: #0f172a;">{jawatan_full}</span>
@@ -254,7 +257,7 @@ def generate_appointment_letter_html(staf_row, school_info, no_rujukan=""):
             <br>
 
             <div style="font-size: 13px; font-weight: bold; color: #0f172a; margin-bottom: 4px;">
-                2.2. JAWATAN TANPA PORTFOLIO:
+                2.2. PORTFOLIO TANPA JAWATAN:
             </div>
             {p_items_html}
 
