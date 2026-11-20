@@ -368,9 +368,25 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         p_dtl = str(staf_row.get(f"Detail_P_{idx_num}", '')).strip()
 
         if p_kod not in ["nan", "None", ""]:
-            clean_p = p_kod.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
-            label_p = f"{p_kod} | {MYSG_PORTFOLIO_P[clean_p][0]}" if clean_p in MYSG_PORTFOLIO_P else p_kod
-            dtl_str = f": {p_dtl}" if p_dtl and p_dtl not in ["nan", "None", label_p] else ""
+            # Ambil kod sahaja (cth: PR01)
+            kod_only = p_kod.split('|')[0].strip()
+            clean_p = kod_only.replace('PR', 'P').replace('PM', 'P')
+            
+            from mysg_core import MYSG_PORTFOLIO_P
+            name_only = MYSG_PORTFOLIO_P[clean_p][0] if clean_p in MYSG_PORTFOLIO_P else ""
+            
+            # Jika ada nama rasmi, gabungkan semula tanpa mengulang
+            if name_only:
+                label_p = f"{kod_only} | {name_only}"
+            else:
+                label_p = p_kod
+                
+            # Hanya tunjuk details jika ia berbeza dengan nama tugas
+            if p_dtl and str(p_dtl).lower() not in ["nan", "none", "-", "", name_only.lower(), label_p.lower()]:
+                dtl_str = f": {p_dtl}"
+            else:
+                dtl_str = ""
+                
             story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.2.{p_count}. {label_p}{dtl_str}", bullet_style))
             p_count += 1
             
@@ -389,9 +405,23 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         j_dtl = str(staf_row.get(f"Detail_J_{idx_num}", '')).strip()
 
         if j_kod not in ["nan", "None", ""]:
-            j_clean = j_kod.split('|')[0].strip().upper().replace('JR', 'J').replace('JM', 'J')
-            label_j = f"{j_kod} | {MYSG_JAWATANKUASA_J[j_clean][0]}" if j_clean in MYSG_JAWATANKUASA_J else j_kod
-            dtl_str = f": {j_dtl}" if j_dtl and j_dtl not in ["nan", "None", label_j] else ""
+            # Ambil kod sahaja (cth: JR01)
+            kod_only = j_kod.split('|')[0].strip().upper()
+            j_clean = kod_only.replace('JR', 'J').replace('JM', 'J')
+            
+            from mysg_core import MYSG_JAWATANKUASA_J
+            name_only = MYSG_JAWATANKUASA_J[j_clean][0] if j_clean in MYSG_JAWATANKUASA_J else ""
+            
+            if name_only:
+                label_j = f"{kod_only} | {name_only}"
+            else:
+                label_j = j_kod
+                
+            # Hanya tunjuk details jika ia berbeza dengan nama JK
+            if j_dtl and str(j_dtl).lower() not in ["nan", "none", "-", "", name_only.lower(), label_j.lower()]:
+                dtl_str = f": {j_dtl}"
+            else:
+                dtl_str = ""
             
             diserap_label = " <font color='#c0392b'><i>(Diserap dalam tugas utama)</i></font>" if j_clean in absorbed_j_codes else ""
             
