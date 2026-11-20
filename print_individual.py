@@ -716,11 +716,16 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
                         <div>• <b>3. Guru Khusus (GPM/Data):</b> Pengurangan PdP untuk menampung masa pengurusan hakiki.</div>
                         <div>• <b>4. AKP:</b> Masa kerja pejabat operasi (40.0 Jam/Minggu). Beban sampingan (Kod P/J) terhad.</div>
                     </div>
+                    
+                    <!-- TAMBAHAN NOTA KAKI PENJELASAN 'DISERAP' -->
+                    <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dotted #ccc; font-style: italic; color: #c0392b;">
+                        * <b>Penyelarasan Jam (Diserap):</b> Label <b>0.0 jam (Diserap)</b> bermaksud peruntukan masa bagi jawatankuasa tersebut telah pun dirangkumkan secara automatik di dalam pakej jam portfolio utama (seperti Guru Kelas / Ketua Panitia / Penyelaras) bagi mengelakkan pengiraan beban berganda (double-counting).
+                    </div>
                 </div>
 
                 <div class="print-footer-container">
                     <div><i>Dokumen Rasmi Dijana Menerusi Sistem Pengurusan Beban Kerja MySG KPM ({kod_sekolah}) | Tarikh Cetakan: <b>{tarikh_hari}</b></i></div>
-                    <div style="white-space: nowrap; font-weight: bold;">[ 1 daripada 1 ]</div>
+                    <div style="white-space: nowrap; font-weight: bold;">[ Halaman 1 daripada 1 ]</div>
                 </div>
             </div>
         </div>
