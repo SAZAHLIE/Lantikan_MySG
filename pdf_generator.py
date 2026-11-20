@@ -130,7 +130,7 @@ def mask_ic_number(ic_str):
     return ic_str
 
 def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
-    from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J
+    from mysg_core import MYSG_PORTFOLIO_P, MYSG_JAWATANKUASA_J, MYSG_P_TO_J_AUTO_MAP
 
     kod_sek = str(school_info.get('kod_sekolah', 'SEK'))
     jenis_sek = str(school_info.get('jenis_sekolah', 'Sekolah Rendah'))
@@ -193,6 +193,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     styles = getSampleStyleSheet()
     body_style = ParagraphStyle('BodyDark', parent=styles['Normal'], fontName='Helvetica', fontSize=11, leading=14, alignment=TA_JUSTIFY)
     bold_body = ParagraphStyle('BoldBody', parent=body_style, fontName='Helvetica-Bold')
+    bullet_style = ParagraphStyle('BulletP', parent=body_style, spaceBefore=0, spaceAfter=0, leading=14)
     
     # -------------------------------------------------------------
     # 1. KEPALA SURAT (MUKA SURAT 1 SAHAJA - LOCKED)
@@ -313,7 +314,7 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     story.append(Paragraph(p2, body_style))
     
     # -------------------------------------------------------------
-    # 4. KOTAK AGIHAN TUGAS (DIJAJARKAN KIRI PENUH)
+    # 4. KOTAK AGIHAN TUGAS
     # -------------------------------------------------------------
     jawatan_val = str(staf_row.get('Jawatan', '')).replace('nan | ', '').replace('nan', '').strip()
     dtl_h = str(staf_row.get('Detail_H_1', '')).replace('nan', '').strip()
@@ -325,6 +326,17 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
     jawatan_val = jawatan_val if jawatan_val else (dtl_h if dtl_h else "Guru Akademik Biasa")
     jawatan_full = f"{kod_h} | {jawatan_val}" if kod_h and kod_h not in jawatan_val else jawatan_val
     jawatan_full = jawatan_full.lstrip('| ').strip()
+
+    # KUMPUL KOD JAWATANKUASA YANG DISERAP OLEH PAKEJ PORTFOLIO
+    absorbed_j_codes = []
+    p_cols = [c for c in staf_row.index if c.startswith('Kod_P_')]
+    for col in p_cols:
+        idx_num = col.split('_')[2]
+        p_kod = str(staf_row.get(f"Kod_P_{idx_num}", '')).strip()
+        if p_kod not in ["nan", "None", ""]:
+            clean_p = p_kod.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
+            if clean_p in MYSG_P_TO_J_AUTO_MAP:
+                absorbed_j_codes.extend(MYSG_P_TO_J_AUTO_MAP[clean_p])
 
     # 2.1 JAWATAN BERPORTFOLIO 
     story.append(Spacer(1, 14))
@@ -342,14 +354,13 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
             try: wkt_num = int(wkt_val)
             except: wkt_num = 0
             cls_str = f", {cls_val}" if cls_val not in ["nan", "None", ""] else ""
-            story.append(Paragraph(f"2.1.{sub_count}. Mengajar {sub_val}{cls_str} ({wkt_num} Waktu)", body_style))
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.1.{sub_count}. Mengajar {sub_val}{cls_str} ({wkt_num} Waktu)", bullet_style))
             sub_count += 1
 
     # 2.2 PORTFOLIO TANPA JAWATAN 
     story.append(Spacer(1, 14))
     story.append(Paragraph("2.2. PORTFOLIO TANPA JAWATAN:", body_style))
     
-    p_cols = [c for c in staf_row.index if c.startswith('Kod_P_')]
     p_count = 1
     for col in p_cols:
         idx_num = col.split('_')[2]
@@ -357,14 +368,14 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         p_dtl = str(staf_row.get(f"Detail_P_{idx_num}", '')).strip()
 
         if p_kod not in ["nan", "None", ""]:
-            from mysg_core import MYSG_PORTFOLIO_P
-            label_p = f"{p_kod} | {MYSG_PORTFOLIO_P[p_kod][0]}" if p_kod in MYSG_PORTFOLIO_P else p_kod
+            clean_p = p_kod.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
+            label_p = f"{p_kod} | {MYSG_PORTFOLIO_P[clean_p][0]}" if clean_p in MYSG_PORTFOLIO_P else p_kod
             dtl_str = f": {p_dtl}" if p_dtl and p_dtl not in ["nan", "None", label_p] else ""
-            story.append(Paragraph(f"2.2.{p_count}. {label_p}{dtl_str}", body_style))
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.2.{p_count}. {label_p}{dtl_str}", bullet_style))
             p_count += 1
             
     if p_count == 1: 
-        story.append(Paragraph("<i>Tiada Jawatan Tanpa Portfolio Ditetapkan</i>", body_style))
+        story.append(Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatan Tanpa Portfolio Ditetapkan</i>", bullet_style))
 
     # 2.3 JAWATANKUASA 
     story.append(Spacer(1, 14))
@@ -378,14 +389,17 @@ def generate_appointment_letter_pdf(staf_row, school_info, no_rujukan=""):
         j_dtl = str(staf_row.get(f"Detail_J_{idx_num}", '')).strip()
 
         if j_kod not in ["nan", "None", ""]:
-            from mysg_core import MYSG_JAWATANKUASA_J
-            label_j = f"{j_kod} | {MYSG_JAWATANKUASA_J[j_kod][0]}" if j_kod in MYSG_JAWATANKUASA_J else j_kod
+            j_clean = j_kod.split('|')[0].strip().upper().replace('JR', 'J').replace('JM', 'J')
+            label_j = f"{j_kod} | {MYSG_JAWATANKUASA_J[j_clean][0]}" if j_clean in MYSG_JAWATANKUASA_J else j_kod
             dtl_str = f": {j_dtl}" if j_dtl and j_dtl not in ["nan", "None", label_j] else ""
-            story.append(Paragraph(f"2.3.{j_count}. {label_j}{dtl_str}", body_style))
+            
+            diserap_label = " <font color='#c0392b'><i>(Diserap dalam tugas utama)</i></font>" if j_clean in absorbed_j_codes else ""
+            
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;2.3.{j_count}. {label_j}{dtl_str}{diserap_label}", bullet_style))
             j_count += 1
             
     if j_count == 1: 
-        story.append(Paragraph("<i>Tiada Jawatankuasa Ditetapkan</i>", body_style))
+        story.append(Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;<i>Tiada Jawatankuasa Ditetapkan</i>", bullet_style))
 
     story.append(Spacer(1, 14))
 
