@@ -122,14 +122,29 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
     else:
         pdp_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.1.1. Tiada Rekod Pengajaran (PdP)</div>"
 
+    # ---------------------------------------------------------
+    # KUMPUL KOD JAWATANKUASA YANG DISERAP OLEH PAKEJ PORTFOLIO
+    # ---------------------------------------------------------
+    absorbed_j_codes = []
+    p_cols = [c for c in staf_row.index if str(c).startswith('Kod_P_')]
+    for pc in p_cols:
+        p_raw = str(staf_row.get(pc, '')).strip()
+        if p_raw and p_raw.lower() not in ['', 'nan', 'none', '-']:
+            clean_p = p_raw.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
+            if clean_p in MYSG_P_TO_J_AUTO_MAP:
+                absorbed_j_codes.extend(MYSG_P_TO_J_AUTO_MAP[clean_p])
+
     p_html_list = ""
     p_list = extract_portfolio_from_row(staf_row)
     if len(p_list) > 0:
         for idx, item in enumerate(p_list, start=1):
             kod_p = item.get('kod', 'P')
             perincian_p = item.get('perincian', '-')
-            label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(kod_p, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
+            
+            clean_kod = kod_p.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
+            label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(clean_kod, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
             dtl_str = f": {perincian_p}" if perincian_p and perincian_p != label_p and perincian_p not in label_p else ""
+            
             p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.{idx}. {label_p}{dtl_str}</div>"
     else:
         p_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.2.1. Tiada Portfolio Ditetapkan</div>"
@@ -140,9 +155,17 @@ def generate_appointment_letter_html(staf_row, school_info, *args, **kwargs):
         for idx, item in enumerate(j_list, start=1):
             kod_j = item.get('kod', 'J')
             perincian_j = item.get('perincian', '-')
-            label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_j, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
+            
+            kod_clean = kod_j.split('|')[0].strip().upper()
+            kod_generik = kod_clean.replace('JR', 'J').replace('JM', 'J')
+            
+            label_j = f"{kod_j} | {MYSG_JAWATANKUASA_J.get(kod_generik, (kod_j, 0))[0]}" if '|' not in kod_j else kod_j
             dtl_str = f": {perincian_j}" if perincian_j and perincian_j != label_j and perincian_j not in label_j else ""
-            j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {label_j}{dtl_str}</div>"
+            
+            # Label (Diserap) dicetak pada Surat Lantikan
+            diserap_label = " <span style='color: #c0392b; font-style: italic; font-size: 9.5pt;'>(Diserap dalam tugas utama)</span>" if kod_generik in absorbed_j_codes else ""
+            
+            j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.{idx}. {label_j}{dtl_str}{diserap_label}</div>"
     else:
         j_html_list += f"<div style='margin-bottom: 2px; padding-left: 20px;'>2.3.1. Tiada Jawatankuasa Ditetapkan</div>"
 
@@ -424,7 +447,8 @@ def generate_individual_detailed_report_html(staf_row, school_info=None, df_all_
             jam_val = round(jam_val, 1)
             bg_color = "#ffffff" if idx_p % 2 == 0 else "#fbfcfd"
             
-            label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(kod_p, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
+            clean_kod = kod_p.split('|')[0].strip().replace('PR', 'P').replace('PM', 'P')
+            label_p = f"{kod_p} | {MYSG_PORTFOLIO_P.get(clean_kod, (kod_p, 0))[0]}" if '|' not in kod_p else kod_p
             dtl_str = f": {perincian_p}" if perincian_p and perincian_p != label_p and perincian_p not in label_p else ""
             
             rows_p_html += f"""
